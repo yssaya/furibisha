@@ -1,0 +1,72 @@
+net = caffe.Net("/home/yss/shogi/learn/aoba_zero_192x10b_mb128_p2187.prototxt",args[1],caffe.TEST)
+
+$ python3 ep_short_auto_py3.py /home/yss/shogi/learn/20231217_224220_192x10b_mb128_ReLU_ojr_ess_S_WIN_90x_100/_iter_100000.caffemodel
+
+45
+0 conv1_3x3_192 192 362 3 3 : 192
+1 bn1 192 192 : 1
+bn_scale_factor= 999.98236
+2 conv2_3x3_192 192 192 3 3 : 192
+3 bn2 192 192 : 1
+bn_scale_factor= 999.98236
+4 conv3_3x3_192 192 192 3 3 : 192
+5 bn3 192 192 : 1
+bn_scale_factor= 999.98236
+6 conv4_3x3_192 192 192 3 3 : 192
+7 bn4 192 192 : 1
+bn_scale_factor= 999.98236
+8 conv5_3x3_192 192 192 3 3 : 192
+9 bn5 192 192 : 1
+bn_scale_factor= 999.98236
+10 conv6_3x3_192 192 192 3 3 : 192
+11 bn6 192 192 : 1
+bn_scale_factor= 999.98236
+12 conv7_3x3_192 192 192 3 3 : 192
+13 bn7 192 192 : 1
+bn_scale_factor= 999.98236
+14 conv8_3x3_192 192 192 3 3 : 192
+15 bn8 192 192 : 1
+bn_scale_factor= 999.98236
+16 conv9_3x3_192 192 192 3 3 : 192
+17 bn9 192 192 : 1
+bn_scale_factor= 999.98236
+18 conv10_3x3_192 192 192 3 3 : 192
+19 bn10 192 192 : 1
+bn_scale_factor= 999.98236
+20 conv11_3x3_192 192 192 3 3 : 192
+21 bn11 192 192 : 1
+bn_scale_factor= 999.98236
+22 conv12_3x3_192 192 192 3 3 : 192
+23 bn12 192 192 : 1
+bn_scale_factor= 999.98236
+24 conv13_3x3_192 192 192 3 3 : 192
+25 bn13 192 192 : 1
+bn_scale_factor= 999.98236
+26 conv14_3x3_192 192 192 3 3 : 192
+27 bn14 192 192 : 1
+bn_scale_factor= 999.98236
+28 conv15_3x3_192 192 192 3 3 : 192
+29 bn15 192 192 : 1
+bn_scale_factor= 999.98236
+30 conv16_3x3_192 192 192 3 3 : 192
+31 bn16 192 192 : 1
+bn_scale_factor= 999.98236
+32 conv17_3x3_192 192 192 3 3 : 192
+33 bn17 192 192 : 1
+bn_scale_factor= 999.98236
+34 conv18_3x3_192 192 192 3 3 : 192
+35 bn18 192 192 : 1
+bn_scale_factor= 999.98236
+36 conv19_3x3_192 192 192 3 3 : 192
+37 bn19 192 192 : 1
+bn_scale_factor= 999.98236
+38 conv1_p_1x1_160 160 192 1 1 : 160
+39 bn1_p 160 160 : 1
+bn_scale_factor= 999.98236
+40 conv2_p_1x1_27 27 160 1 1 : 27
+41 conv1_v_1x1_4 4 192 1 1 : 4
+42 bn1_v 4 4 : 1
+bn_scale_factor= 999.98236
+43 ip2_v 256 324 : 256
+44 ip3_v 1 256 : 1
+convert done... 6728232  (fc_sum= 83200  cv_sum= 6633312 )
