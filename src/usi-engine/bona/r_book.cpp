@@ -17,6 +17,7 @@
 #include <cmath>
 #include <chrono>
 #include <exception>
+#include <cfloat>
 
 #include <limits.h>
 #include <stdio.h>
