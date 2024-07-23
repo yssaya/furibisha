@@ -426,16 +426,16 @@ void InitLockYSS()
 void shogi::hyouji()
 {
    int x,y,i;
-   PRT("    1 2 3 4 5 6 7 8 9  \n");
+   PRT("   1 2 3 4 5 6 7 8 9  \n");
    for (y=0;y<9;y++) {
-	  PRT("%d¨¢",y+1);
+	  PRT("%d|",y+1);
 	  for (x=0;x<9;x++) {
 		 int n = ban[ (y+1)*16+x+1 ];
 		 int k = kn[n][0];
 		 if (k>0x80) k-=0x70;
 //		 PRT("%s",koma[i]);
 		 PRT("%s",koma_kanji[k]);
-	  }  PRT("¨¢");
+	  }  PRT("|");
 	  if (y==0) {
 		 PRT("   COM :");
 //		 for (i=1;i<8;i++) PRT("%s %x:",koma[i+16],mo_c[i]);
@@ -1535,6 +1535,31 @@ void shogi::change_sg(int bz,int az,int tk,int nf,int depth, char retp[])
 		strcat(retp, koma_kanji_str(tk & 0x07) );
 		strcat(retp, "ÂÇ");
 	}
+}
+
+void shogi::change_csa(int bz,int az,int tk,int nf,int fGoteTurn, char retp[])
+{
+	char c = '+';
+	if ( fGoteTurn ) c = '-';
+
+	int k = 0;
+	if ( bz == 0xff ) {
+		bz = 0x00;
+		k = tk & 0x07;
+	} else {
+		k = init_ban[bz] & 0x0f;
+		int x = 10 - (bz & 0x0f);
+		bz = (bz>>4) + (x<<4);
+		if ( nf ) k += 8;
+	}
+	int x = 10 - (az & 0x0f);
+	az = (az>>4) + (x<<4);
+//	if ( fKomaochi ) {
+//		if ( bz ) bz = 0xaa - bz;
+//		az = 0xaa - az;
+//	}
+
+	sprintf(retp,"%c%02X%02X%s",c,bz,az,koma[k]);
 }
 
 void shogi::change_log_pv(char *str)

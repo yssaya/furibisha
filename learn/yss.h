@@ -5,7 +5,11 @@
 
 
 #define F2187
+#define FURIBISHA
 
+const int MOVE_2187_MAX = 2187;
+const int FURIBISHA_FROM = 11;
+const int FURIBISHA_TO   = 24;
 
 
 #define SMP	// 並列探索する場合には定義する
@@ -363,6 +367,7 @@ public:
 	void change_small(int bz,int az,int tk,int nf,char retp[]);
 	void change_sg(int bz,int az,int tk,int nf,int depth,char retp[]);	// ▲76歩、の表記に変換する。
 	void change_log_pv(char *);
+	void change_csa(int bz,int az,int tk,int nf,int fGoteTurn, char retp[]);
 	void print_tejun(void);	// 現在までの探索手順を表示する関数（増えてきたのでここでまとめる）
 	void print_path();
 	void print_te(int bz, int az,int tk,int nf);	// 手を表示するだけ
@@ -428,8 +433,11 @@ public:
 	int think_kifuset();
 	void update_zero_kif_db();
 	void copy_restore_dccn_init_board(int handicap, bool fCopy);
-#ifdef F2187
-	void prepare_kif_db(int fPW, int mini_batch, float *data, float *label_policy, float *label_value, float label_policy_visit[][2187]);
+
+#ifdef FURIBISHA
+	void prepare_kif_db(int fPW, int mini_batch, float *data, float *label_policy, float *label_value, float *label_rook, float *label_rook_ok, float label_policy_visit[][MOVE_2187_MAX]);
+#elif defined(F2187)
+	void prepare_kif_db(int fPW, int mini_batch, float *data, float *label_policy, float *label_value, float label_policy_visit[][MOVE_2187_MAX]);
 #else
 	void prepare_kif_db(int fPW, int mini_batch, float *data, float *label_policy, float *label_value, float label_policy_visit[][MOVE_C_Y_X_ID_MAX]);
 #endif
@@ -443,7 +451,10 @@ public:
 	int make_www_samples();
 	void get_piece_num_diff(bool bGoteTurn, int d[]);
 	void sum_pwv(double z, bool bGoteTurn, double sumd[]);
-
+	void same_pos_check();
+	int is_koshikake_gin(ZERO_DB *p);
+	void count_furi();
+	void set_keep_pos();
 
 	// fish関連
 	bool is_pseudo_legalYSS(Move m, Color sideToMove);

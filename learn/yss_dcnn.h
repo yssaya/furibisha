@@ -42,6 +42,8 @@ const int MOVE_C_Y_X_ID_MAX = 11259;	// 3781;
 #endif
 
 #define GCT_SELF 0	// GCTの棋譜 selfplay_gct-???.hcpe3.xz を使う場合。 https://tadaoyamaoka.hatenablog.com/entry/2021/05/06/223701
+#define U8700 0		// 本番学習環境
+#define TRAINED_NUM 1	// dlshogiのhcpe3用、学習された局面を覚える
 
 typedef struct ZERO_DB {
 	uint64 hash;	// 棋譜を示すハッシュ
@@ -52,13 +54,22 @@ typedef struct ZERO_DB {
 	int result_type;// 投了、千日手、中断(513手)、宣言勝ち、連続王手の王逃げによる反則勝、
 	int moves;		// 手数(棋譜のサイズと同じ)
 	int handicap;	// 駒落ち
+#ifdef FURIBISHA
+	int furi_hope_bit[2];	// 希望の飛車の振る場所
+	int furi_bit[2];		// 実際の振り場所
+#endif
 #if ( GCT_SELF==1)
 	vector <unsigned char> v_init_pos;		// 開始局面＋手番 81+7*2+1、ハフマンで256bit(32byte)で表現できるので圧縮は可能
 #endif
 	vector <unsigned short> v_kif;			// 棋譜
 	vector <unsigned short> v_playouts_sum;	// Rootの探索数。通常は800固定
-	vector < vector<unsigned int> > vv_move_visit;		// (手+選択回数)のペア
+	vector < vector<unsigned int> > vv_move_visit;	// (手+選択回数)のペア。上位16bitが手、下位16bitが回数
 	vector <unsigned short> v_score_x10k;	// Rootの評価値。自分から見た勝率。1.0で勝ち。0.0で負け。1万倍されている。
+	vector <unsigned short> v_rawscore_x10k;// Networkのその局面の勝率
+	vector < vector<char> > vv_raw_policy;
+#if ( TRAINED_NUM==1 )
+	vector <unsigned short> v_trained_num;	// 学習された回数
+#endif
 } ZERO_DB;
 
 extern ZERO_DB zdb_one;	// 棋譜読み込みで使用

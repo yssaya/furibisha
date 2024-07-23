@@ -3,7 +3,7 @@
 VPATH = common
 
 # program name and object files
-PROGRAM = learn
+PROGRAM = learnf
 OBJS = yss.o yss_misc.o \
        yss_ki1.o yss_ki2.o \
        yss_dcnn.o \

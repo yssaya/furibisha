@@ -897,6 +897,11 @@ int shogi::LoadCSA()
 	int fShortCSA = 0;	// 盤面を座標で指定する詰将棋用
 	char sIndex[256];
 
+#ifdef FURIBISHA
+	int furi_count[2][9];
+	for (int i=0;i<2;i++) for (int j=0;j<9;j++) furi_count[i][j] = 0;
+#endif
+
 	tesuu = 0;
 	hirate_ban_init(KomaOti);		// 盤面の初期化　平手の状態へ
 
@@ -966,6 +971,25 @@ int shogi::LoadCSA()
 						pz->weight_n = atoi(lpLine+3);
 					}
 				}
+				// FuriPos 101111111:000010000
+				char *p = strstr(lpLine,"FuriPos");
+				if ( p ) {
+//					*(p+17)=0;
+//					*(p+27)=0;
+					ZERO_DB *pz = &zdb_one;
+					for (int i=0;i<2;i++) {
+						int bit = 0;
+						for (int x=0;x<9;x++) {
+							char c = *(p+8+x+i*10);
+							if ( c!='1' && c!='0' ) DEBUG_PRT("");
+							int b = (c=='1');
+							bit <<= 1;
+							bit |= b;
+						}
+						pz->furi_hope_bit[i] = bit;
+					}
+				}
+
 			} else {
 				ZERO_DB *pz = &zdb_one;
 //				PRT("%s\n",lpLine);
@@ -974,6 +998,8 @@ int shogi::LoadCSA()
 				if ( pz->vv_move_visit.size() != (size_t)tesuu ) {
 					DEBUG_PRT("pz->vv_move_visit.size()=%d,tesuu=%d Err\n",pz->vv_move_visit.size(),tesuu);
 				}
+				vector <char> vc;
+				pz->vv_raw_policy.push_back(vc);
 				back_move();
 				char *p = lpLine + 1;
 				int count = 0, all_visit = 0, sum_visit = 0;
@@ -1003,8 +1029,10 @@ int shogi::LoadCSA()
 							float score = atof(str+2);
 							int s = (int)(score * 10000);
 							if ( s < 0 || s > 10000 ) DEBUG_PRT("Err s=%d,v=%s\n",s,str);
+							pz->v_rawscore_x10k.push_back((unsigned short)s);
 						} else {
 							all_visit = atoi(str);
+							if ( all_visit > 0xffff ) all_visit = 0xffff;
 							pz->v_playouts_sum.push_back(all_visit);
 							if ( has_root_score == false ) pz->v_score_x10k.push_back(NO_ROOT_SCORE);
 						}
@@ -1017,8 +1045,19 @@ int shogi::LoadCSA()
 							sum_visit += v;
 							unsigned short m = (((unsigned char)b0) << 8) | ((unsigned char)b1); 
 							int move_visit = (m << 16) | v;
-							pz->vv_move_visit[tesuu].push_back(move_visit); 
+							pz->vv_move_visit[tesuu].push_back(move_visit);
 							b0 = b1 = 0;
+							int len = strlen(str);
+							if ( len > 0 ) {
+								char c = str[len-1];
+								if ( ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ) {
+									if ( c >= 'a' ) c = c - 'a' + 26;
+									else c = c - 'A';
+									if ( c < 0 || c > 51 ) DEBUG_PRT("str=%s\n",str);
+									pz->vv_raw_policy[tesuu].push_back(c);
+								}
+							}
+
 						} else {
 							if ( getMoveFromCsaStr(&bz, &az, &tk, &nf, str)==0 ) DEBUG_PRT("");
 							int c = (tesuu + fGotekara)&1;
@@ -1221,6 +1260,7 @@ PI82HI22KA11KY91KY21KE81KE  6枚落ち
 			for (i=0;i<(int)pz->vv_move_visit.size();i++) {
 				sum += pz->vv_move_visit[i].size();
 			}
+			if ( pz->vv_move_visit.size() != pz->vv_raw_policy.size() ) DEBUG_PRT("pz->vv_raw_policy.size()=%d\n",pz->vv_raw_policy.size());
 			PRT("handicap=%d,moves=%d,result=%d, mv_sum=%d,%.1f\n",pz->handicap,pz->moves,pz->result,sum, (double)sum/(tesuu+0.00001f));
 			if ( pz->result_type == RT_NONE ) DEBUG_PRT("");
 #endif
@@ -1240,6 +1280,22 @@ PI82HI22KA11KY91KY21KE81KE  6枚落ち
 #endif
 		kifu_set_move(bz,az,tk,nf,0);
 
+#ifdef FURIBISHA
+		// 1筋から9筋まで、12手目から25手目まで(各7局面)、に飛車がいた筋をｎ間飛車、と呼ぶ。
+		int ok = (FURIBISHA_FROM <= tesuu) && (tesuu <= FURIBISHA_TO);
+		int f0=0,f1=0,z0=0,z1=0;	// 飛車は1枚だけ、を限定
+		for (int z=0x11;z<0x9a;z++) {
+			int k = init_ban[z];
+			if ( k==0x07 && (tesuu&1)==1 ) { z0 = z; f0++; }	// 先手が指した後の局面(後手番)で判定
+			if ( k==0x87 && (tesuu&1)==0 ) { z1 = z; f1++; }
+		}
+		int e0 = (z0&0xf0)==0x80;
+		int e1 = (z1&0xf0)==0x20;
+		e0 = e1 = 1;// 2段目に限定しない
+		if ( f0==1 && ok && e0 ) furi_count[0][(z0 & 0x0f)-1] += 1000 - tesuu;	// 同じ回数なら手数が短い位置を優先
+		if ( f1==1 && ok && e1 ) furi_count[1][(z1 & 0x0f)-1] += 1000 - tesuu;
+#endif
+
 		if ( tesuu == KIFU_MAX-1 ) break;
 	}
 	PRT("読み込んだ手数=%d (CSA形式)\n",tesuu);
@@ -1247,6 +1303,29 @@ PI82HI22KA11KY91KY21KE81KE  6枚落ち
 		ban_saikousei();	// 盤面の再構成。
 		check_kn();			// 盤面の状態が正常化チェック
 	}
+
+#ifdef FURIBISHA
+	int furi_x[2] = { 7, 1 };	// 飛車が存在しない場合は居飛車とする
+	for (int i=0;i<2;i++) {
+		int max_x = 0, max_n = 0;
+		for (int x=0;x<9;x++) {
+			int n = furi_count[i][x];
+			if ( n <= max_n ) continue;
+			max_n = n;
+			max_x = x;
+		}
+		furi_x[i] = max_x;
+	}
+	if ( furi_x[0] <= 0 || furi_x[0] >= 9 || furi_x[1] <= 0 || furi_x[1] >= 9 ) DEBUG_PRT("");
+	ZERO_DB *pz = &zdb_one;
+	pz->furi_bit[0] = 1 << (8-furi_x[0]);
+	pz->furi_bit[1] = 1 << (8-furi_x[1]);
+	if ( pz->furi_bit[0]==0 || pz->furi_bit[1]==0 || pz->furi_hope_bit[0]==0 || pz->furi_hope_bit[1]==0 ) DEBUG_PRT("");
+//	int ret = furi_x[0]*9 + furi_x[1];	// 先手の飛車の位置*9 + 後手の飛車の位置、確率も同じ順番
+//	PRT("furi_x[]=%d,%d,ret=%d\n",furi_x[0],furi_x[1],ret);
+//	if ( ret < 0 || ret >= 81 ) DEBUG_PRT("");
+#endif
+
 #ifdef AOBA_ZERO
 	if ( zdb_one.moves < 0 ) {
 		PRT("file read err\n");
