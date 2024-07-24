@@ -2813,9 +2813,8 @@ void free_zero_db_struct(ZERO_DB *p)
 
 //const int ZERO_DB_SIZE = 267000000;	// AI_book2
 //const int ZERO_DB_SIZE = 20000000;	// gct001-075
-//const int ZERO_DB_SIZE = 900000;	// 100000,  500000
-//const int ZERO_DB_SIZE = 1000000;	// 100000,  500000
-const int ZERO_DB_SIZE = 3500000;//3980000;
+//const int ZERO_DB_SIZE = 10000;	// 100000,  500000
+const int ZERO_DB_SIZE = 1000000;	// 100000,  500000
 const int MAX_ZERO_MOVES = 513;	// 512手目を後手が指して詰んでなければ。513手目を先手が指せば無条件で引き分け。
 ZERO_DB zdb_one;
 
@@ -2826,22 +2825,22 @@ unsigned char *pZDBmove;
 unsigned char *pZDBmaxmove;
 unsigned short *pZDBplayouts_sum;
 unsigned short *pZDBscore_x10k;
-const int ZDB_POS_MAX = ZERO_DB_SIZE * 128;	// 128 = average moves. 64 = gct001-075
+const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-075
 //const int ZDB_POS_MAX = ZERO_DB_SIZE * 1;	// AI book2
 
 int zdb_count = 0;
-int zdb_count_start = 64340000;//59000000;//66360000;//65430000;//65930000;//43000000;//56500000;//61000000;//60790000;//63170000;//62400000;//40000000;//61950000;//59030000;//61950000;//61300000; //59020000;//58410000;//51000000;//53920000; 52320000;48000000;1000000;48300000;18000000; 10000000;11600000; 10300000; 9500000;8500000; 7400000; //5220000; //3200000; //2100000; //390000;//130000;//460000;//29700000; //18200000;//23400000; //20300000; //18800000; //16400000;	//10300000; //5200000;	// 400万棋譜から読み込む場合は4000000
+int zdb_count_start = 0;
 uint64_t zero_kif_pos_num = 0;
 int zero_kif_games = 0;
 int zero_pos_over250;
-const int MINI_BATCH = 256;	// aoba_zero.prototxt の cross_entroy_scale も同時に変更すること！layerのnameも要変更
-//const int MINI_BATCH = 128;
+//const int MINI_BATCH = 256;	// aoba_zero.prototxt の cross_entroy_scale も同時に変更すること！layerのnameも要変更
+const int MINI_BATCH = 128;
 const int ONE_SIZE = DCNN_CHANNELS*B_SIZE*B_SIZE;	// 362*9*9; *4= 117288 *64 = 7506432,  7MBにもなる mini_batch=64
 int nGCT_files;	// 1つの selfplay_gct-00*.csa に入ってる棋譜数
 int gct_csa = 1;	// ファイル番号
 int sum_gct_loads = 0; // 1ファイルの全棋譜を読み込んだ後に加算される
 
-const int fReplayLearning = 1;	// すでに作られた棋譜からWindowをずらせて学習させる
+const int fReplayLearning = 0;	// すでに作られた棋譜からWindowをずらせて学習させる
 const int fWwwSample = 0;		// fReplayLearning も同時に1
 
 
@@ -2850,7 +2849,7 @@ const int fWwwSample = 0;		// fReplayLearning も同時に1
 // https://tadaoyamaoka.hatenablog.com/entry/2019/08/18/154610
 // https://github.com/jaromiru/AI-blog/blob/master/SumTree.py
 
-const bool fSumTree = true;
+const bool fSumTree = false;
 
 const int LEAVES = ZDB_POS_MAX;//46334390;//41352794;	// 棋譜の数ではない。局面数。ZERO_DB_SIZE;
 const int SUMTREE_SIZE = 2*LEAVES - 1;
@@ -3015,9 +3014,11 @@ int find_kif_from_archive(int search_n)
 //	char dir_arch[] = "/home/yss/prg/komaochi/archive/";
 //	char dir_arch[] = "/home/yss/koma_syn/archive/";
 #if ( U8700==1 )
-	char dir_arch[] = "/home/yss/tcp_backup/archive/";
+//	char dir_arch[] = "/home/yss/tcp_backup/archive/";
+	char dir_arch[] = "/home/yss/prg/furibisha/archive/";
 #else
-	char dir_arch[] = "/home/yss/tcp_backup/archive20201207/";
+//	char dir_arch[] = "/home/yss/tcp_backup/archive20201207/";
+	char dir_arch[] = "/home/yss/prg/furibisha/archive/";
 #endif
 	int arch_n = (search_n/10000) * 10000;	// 20001 -> 20000
 
@@ -3133,7 +3134,8 @@ int find_kif_from_archive(int search_n)
 int find_kif_from_pool(int search_n)
 {
 //	char dir_pool[] = "/home/yss/koma_syn/pool";
-	char dir_pool[] = "/home/yss/tcp_backup/pool";
+//	char dir_pool[] = "/home/yss/tcp_backup/pool";
+	char dir_pool[] = "/home/yss/prg/furibisha/pool";
 	char filename[TMP_BUF_LEN];
 	if ( USE_XZ ) {
 		sprintf(filename,"%s/no%012d.csa.xz",dir_pool,search_n);
@@ -3787,10 +3789,10 @@ kld = 1.0;	// ignore kld
 
 #ifdef FURIBISHA
 		// 実際に指した振り飛車の回数、希望した回数、実現した回数(割合)
-		for (int k=0;j<2;k++) {
+		for (int k=0;k<2;k++) {
 			int hope = p->furi_hope_bit[k];
 			int bit  = p->furi_bit[k];
-			for (j=0;j<9;j++) {
+			for (int j=0;j<9;j++) {
 				int h = hope & 1;
 				hope >>= 1;
 				furi_hope_count[k][8-j] += h;
@@ -3902,7 +3904,7 @@ kld = 1.0;	// ignore kld
 			int b = furi_count[i][j];
 			int k = furi_ok[i][j];
 			if ( h==0 ) h = 1;
-			PRT("%d:%5d(%11f),%10d,hope=%10d\n",k,(float)k/h,b,h);
+			PRT("%d:%5d(%11f),%10d,hope=%10d\n",i,k,(float)k/h,b,h);
 		}
 		PRT("\n");
 	}
@@ -5394,8 +5396,8 @@ wait_again:
 //		if ( iteration >= 100000*1 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration > 1000 ) solver_param.set_base_lr(0.01);
 	} else {
-		if ( 1 && iteration==0 && next_weight_number==4255 ) {
-			add = 3134;	// 初回のみダミーで10000棋譜追加したことにする
+		if ( 1 && iteration==0 && next_weight_number==2 ) {
+			add = 100000;	// 初回のみダミーで10000棋譜追加したことにする
 		} else {
 			add = PS->wait_and_get_new_kif(next_weight_number);
 		}
@@ -5440,7 +5442,7 @@ wait_again:
 //nLoop *= 0.261;	// *= 2.66 ... 800000 iteration / ((600000 kifu/ 2000) * 1000 Loop) = 2.66
 //nLoop = (int)((float)nLoop * 0.701);
 	if ( GCT_SELF ) nLoop = 800000*1;
-nLoop = (int)(((float)zero_kif_pos_num / MINI_BATCH) * 50 / 100.0);	// 50%の局面を学習 //10*1; 
+//nLoop = (int)(((float)zero_kif_pos_num / MINI_BATCH) * 50 / 100.0);	// 50%の局面を学習 //10*1; 
 //nLoop = 0;
 
 	PRT("nLoop=%d,add=%d,add_mul=%.3f,MINI_BATCH=%d,kDataSize=%d,remainder=%d,iteration=%d(%d/%d),rand=%lu/%lu(%lf),",nLoop,add,add_mul,MINI_BATCH,kDataSize,remainder,iteration,iter_weight,iter_weight_limit, rand_try,rand_batch,(double)rand_try/(double)(rand_batch+0.00001));
@@ -5595,7 +5597,7 @@ PRT("nLoop=%d,add=%d,add_mul=%.3f,MINI_BATCH=%d,kDataSize=%d,remainder=%d,iterat
 	PRT("used = %d/%d(%f),zero_kif_pos_num=%d\n",used,all,(float)used/all, zero_kif_pos_num);
 }
 #endif
-return;
+//return;
 	if ( GCT_SELF ) return;
 	goto wait_again;
 }

@@ -60,7 +60,7 @@ layer {
 layer {
   name: "label_rook_ok"  # After move 25, label_rook and rook_ok is set to 0. Rook loss is not learned.
   type: "MemoryData"
-  top: "label_rook_ok"
+  top: "label_policy_raw"
   top: "dummy_label5"
   memory_data_param {
     batch_size: 128
@@ -68,6 +68,12 @@ layer {
     height: 1
     width: 1
   }
+}
+layer {
+  name: "flat_label_rook_ok"
+  type: "Flatten"
+  bottom: "label_policy_raw"
+  top: "label_rook_ok"
 }
 
 layer {

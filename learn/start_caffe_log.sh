@@ -1,2 +1,2 @@
 #rm -f caffe.INFO
-./learn |& tee `date "+%Y%m%d_%H%M%S"`.log
+./learnf |& tee `date "+%Y%m%d_%H%M%S"`.log

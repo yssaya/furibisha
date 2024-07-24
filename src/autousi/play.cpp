@@ -277,7 +277,7 @@ public:
     argv[argc++] = opt_m;
     argv[argc++] = opt_m_value;
 
-#if 1	// make first random 100000 games.
+#if 0	// make first random 100000 games.
     char opt_nn_rand[] = "-nn_rand";
     argv[argc++] = opt_nn_rand;
     char opt_t[]       = "-t";

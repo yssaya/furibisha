@@ -42,8 +42,8 @@ const int MOVE_C_Y_X_ID_MAX = 11259;	// 3781;
 #endif
 
 #define GCT_SELF 0	// GCTの棋譜 selfplay_gct-???.hcpe3.xz を使う場合。 https://tadaoyamaoka.hatenablog.com/entry/2021/05/06/223701
-#define U8700 0		// 本番学習環境
-#define TRAINED_NUM 1	// dlshogiのhcpe3用、学習された局面を覚える
+#define U8700 1		// 本番学習環境
+#define TRAINED_NUM 0	// dlshogiのhcpe3用、学習された局面を覚える
 
 typedef struct ZERO_DB {
 	uint64 hash;	// 棋譜を示すハッシュ

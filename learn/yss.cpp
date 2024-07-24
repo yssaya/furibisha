@@ -1316,7 +1316,7 @@ PI82HI22KA11KY91KY21KE81KE  6ËçÍî¤Á
 		}
 		furi_x[i] = max_x;
 	}
-	if ( furi_x[0] <= 0 || furi_x[0] >= 9 || furi_x[1] <= 0 || furi_x[1] >= 9 ) DEBUG_PRT("");
+	if ( furi_x[0] < 0 || furi_x[0] >= 9 || furi_x[1] < 0 || furi_x[1] >= 9 ) DEBUG_PRT("");
 	ZERO_DB *pz = &zdb_one;
 	pz->furi_bit[0] = 1 << (8-furi_x[0]);
 	pz->furi_bit[1] = 1 << (8-furi_x[1]);

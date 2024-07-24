@@ -14,10 +14,7 @@ print(args[1])
 #sys.exit()
 
 caffe.set_mode_cpu()
-#net = caffe.Net("/home/yss/shogi/yssfish/aoba_zero_256x20b.prototxt","/home/yss/shogi/yssfish/20190419replay_lr001_wd00002_100000_1018000/_iter_36000.caffemodel",caffe.TEST);
-net = caffe.Net("/home/yss/shogi/yssfish/aoba_zero_256x20b.prototxt",args[1],caffe.TEST);
-
-
+net = caffe.Net("/home/yss/prg/furibisha/rook_128x10b_ReLU_mb128.prototxt",args[1],caffe.TEST);
 
 
 
@@ -68,10 +65,10 @@ sum = 0
 fc_sum = 0
 cv_sum = 0
 
-bf.write('2\n')    # version
+bf.write('4\n')    # version
 
 n_layer = len( net.params.items() )
-print n_layer
+print (n_layer)
 
 
 for loop in range(n_layer):
@@ -83,7 +80,7 @@ for loop in range(n_layer):
 	if 'bn' in name:
 		a1 = net.params[name][1].data.shape[0]
 		b0 = net.params[name][2].data.shape[0]
-		print loop , name, a0,a1, ":", b0
+		print (loop , name, a0,a1, ":", b0)
 		for i in range(2):
 			ct = 0
 			for j in range(a0):
@@ -107,7 +104,7 @@ for loop in range(n_layer):
 	a1 = net.params[name][0].data.shape[1]
 	if ('fc' in name or 'ip' in name):
 		b0 = net.params[name][1].data.shape[0]
-		print loop , name, a0,a1, ":", b0
+		print (loop , name, a0,a1, ":", b0)
 		for i in range(a0):
 			for j in range(a1):
 				d = net.params[name][0].data[i][j]
@@ -123,7 +120,7 @@ for loop in range(n_layer):
 		a2 = net.params[name][0].data.shape[2]
 		a3 = net.params[name][0].data.shape[3]
 		b0 = net.params[name][1].data.shape[0]
-		print loop , name, a0,a1,a2,a3, ":", b0
+		print (loop , name, a0,a1,a2,a3, ":", b0)
 
 		for i in range(a0):
 			for j in range(a1):
@@ -151,7 +148,7 @@ for loop in range(n_layer):
 	bf.write('\n')
 
 bf.close()
-print "convert done...", sum, " (fc_sum=", fc_sum, " cv_sum=", cv_sum, ")"
+print ("convert done...", sum, " (fc_sum=", fc_sum, " cv_sum=", cv_sum, ")")
 sys.exit()
 
 
