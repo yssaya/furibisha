@@ -916,7 +916,7 @@ usi_option( tree_t *restrict ptree, char **lasts )
   // "setoption name USI_HandicapRate value 30:100:150:300:700:900:1200"
   // "setoption name USI_AverageWinrate value 0.547"
   // "setoption name USI_FuriHandicapRate value 282:0:32:0:0:0:-11:0:0:-432:-180:-130:-110:-130:-60:-50:85:-312:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:-63:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:321:0:0:0:0:0:0:0:0:0:0:0:0:-431:84"
-  // "setoption name USI_FuriPos value 00000010:000001000"
+  // "setoption name USI_FuriPos value 000000010:000001000"
 
   const char *name[] = {
     "USI_WeightFile","USI_HandicapRate","USI_AverageWinrate","USI_FuriHandicapRate","USI_FuriPos",NULL

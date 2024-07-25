@@ -421,7 +421,7 @@ public:
 
 	// yss_dcnn.cpp
 	void make_policy_leveldb();
-	void set_dcnn_channels(Color sideToMove, const int ply, float *p_data, int stock_num, int nHandicap);
+	void set_dcnn_channels(Color sideToMove, const int ply, float *p_data, int stock_num, int nHandicap, int furi_hope_bit);
 	void setYssChannels(Color sideToMove, int moves, float *p_data, int net_kind, int input_num);
 	int get_cnn_next_move();
 	HASH_SHOGI* HashShogiReadLock();

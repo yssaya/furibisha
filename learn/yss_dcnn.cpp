@@ -704,7 +704,7 @@ void shogi::make_policy_leveldb()
 //					dcnn_labels[stock_num][0] = u;
 					dcnn_labels[stock_num][0] = get_move_id_c_y_x(pack_te(bz,az,tk,nf));	//pack_te(bz,az,tk,nf);
 					dcnn_labels[stock_num][1] = win_r;
-					set_dcnn_channels(c, i, NULL, stock_num, 0);
+					set_dcnn_channels(c, i, NULL, stock_num, 0, 0);
 					if ( j==1 ) flip_horizontal_channels(stock_num);
 //					PRT("%3d,%02x,%02x,%02x,%02x,%5d,%08x\n",i,bz,az,tk,nf,dcnn_labels[stock_num][0], get_move_from_c_y_x_id(dcnn_labels[stock_num][0]));
 //					PRT("%3d,%02x,%02x,%02x,%02x,%5d,%08x\n",i,bz,az,tk,nf,dcnn_labels[stock_num][0], get_te_from_unique(dcnn_labels[stock_num][0]));
@@ -1096,12 +1096,13 @@ void flip_horizontal_channels(int stock_num)
 
 void shogi::setYssChannels(Color sideToMove, int moves, float *p_data, int net_type, int input_num)
 {
+	DEBUG_PRT("");
 	float (*data)[B_SIZE][B_SIZE] = (float(*)[B_SIZE][B_SIZE])p_data;
 
 	for (int i=0;i<input_num;i++) for (int y=0;y<B_SIZE;y++) for (int x=0;x<B_SIZE;x++) {
 		data[i][y][x]=0;
 	}
-	set_dcnn_channels(sideToMove, moves, p_data, -1, 0);
+	set_dcnn_channels(sideToMove, moves, p_data, -1, 0, 0);
 //	{ for (int i=0;i<input_num;i++) for (int y=0;y<B_SIZE;y++) for (int x=0;x<B_SIZE;x++) PRT("%.0f,",data[i][y][x]); } PRT("\n");
 }
 
@@ -1118,7 +1119,7 @@ inline void set_dcnn_data(int stock_num, float data[][B_SIZE][B_SIZE], int n, in
 		data[n][y][x] = v;
 	}
 }
-void shogi::set_dcnn_channels(Color sideToMove, const int ply, float *p_data, int stock_num, int nHandicap)
+void shogi::set_dcnn_channels(Color sideToMove, const int ply, float *p_data, int stock_num, int nHandicap, int furi_hope_bit)
 {
 	float (*data)[B_SIZE][B_SIZE] = (float(*)[B_SIZE][B_SIZE])p_data;
 	int base = 0;
@@ -1132,8 +1133,8 @@ void shogi::set_dcnn_channels(Color sideToMove, const int ply, float *p_data, in
 	// move_hit_kif[], move_hit_hashcode[] に棋譜+探索深さの棋譜とハッシュ値を入れること 
 
 	int loop,back_num=0;
-	const int T_STEP = 6;
-//	const int T_STEP = 1;
+//	const int T_STEP = 6;
+	const int T_STEP = 1;
 	const int PREV_AZ = 0;
 	const int TWO_HOT = 0;	// 自分の歩は +1、相手の歩は -1 で同じ面にエンコード
 	for (loop=0; loop<T_STEP; loop++) {
@@ -1387,11 +1388,13 @@ void shogi::set_dcnn_channels(Color sideToMove, const int ply, float *p_data, in
 
 	// 手合い割
 	add_base = 7;
+/*
 	if ( nHandicap < 0 || nHandicap >= HANDICAP_TYPE ) DEBUG_PRT("");
 	for (y=0;y<B_SIZE;y++) for (x=0;x<B_SIZE;x++) {
 		set_dcnn_data(stock_num, data, base + nHandicap, y,x);
 	}
 //	if ( nHandicap!=0 ) DEBUG_PRT("");
+*/
 	base += add_base;
 
 /*
@@ -1435,6 +1438,21 @@ void shogi::set_dcnn_channels(Color sideToMove, const int ply, float *p_data, in
 	}
 	base += add_base;
 */
+
+
+	// 希望の飛車を振る場所。複数あり。先手四間飛車、後手三間飛車の場合は  000100000:000000100  先手、後手とも左から見た絶対座標
+	int hope = furi_hope_bit;
+	for (int i=0;i<9;i++) {
+		int h = hope & 1;
+		hope >>= 1;
+		int index = 8-i;	// ビット列なので先手の場合を反転
+		if ( flip ) index = i;
+		if ( h ) {
+			for (y=0;y<B_SIZE;y++) for (x=0;x<B_SIZE;x++) {
+				set_dcnn_data(stock_num, data, base+index, y,x);
+			}
+		}
+	}
 
 	add_base = 9;	// 17 - (1+7+0);
 	base += add_base;
@@ -2813,8 +2831,8 @@ void free_zero_db_struct(ZERO_DB *p)
 
 //const int ZERO_DB_SIZE = 267000000;	// AI_book2
 //const int ZERO_DB_SIZE = 20000000;	// gct001-075
-//const int ZERO_DB_SIZE = 10000;	// 100000,  500000
-const int ZERO_DB_SIZE = 1000000;	// 100000,  500000
+const int ZERO_DB_SIZE = 10000;	// 100000,  500000
+//const int ZERO_DB_SIZE = 100000;	// 100000,  500000
 const int MAX_ZERO_MOVES = 513;	// 512手目を後手が指して詰んでなければ。513手目を先手が指せば無条件で引き分け。
 ZERO_DB zdb_one;
 
@@ -2829,7 +2847,7 @@ const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-
 //const int ZDB_POS_MAX = ZERO_DB_SIZE * 1;	// AI book2
 
 int zdb_count = 0;
-int zdb_count_start = 0;
+int zdb_count_start = 110000;
 uint64_t zero_kif_pos_num = 0;
 int zero_kif_games = 0;
 int zero_pos_over250;
@@ -3521,7 +3539,7 @@ void update_pZDBsum()
 		int h = p->handicap;
 		if ( h < 0 || h >= H ) DEBUG_PRT("");
 		if ( p->result_type < 0 || p->result_type >= RT_MAX ) DEBUG_PRT("");
-		if ( p->moves == 0 ) { PRT("Err. p->moves=0\n"); exit(0); }
+		if ( p->moves == 0 ) DEBUG_PRT("Err. p->moves=0,i=%d,loop=%d\n",i,loop);
 		if ( p->result < 0 || p->result > 2 ) DEBUG_PRT("");
 
 		if ( zero_kif_pos_num + p->moves >= ZDB_POS_MAX ) DEBUG_PRT("ZDB_POS_MAX! %d/%d,%lu,%d",i,loop,zero_kif_pos_num,p->moves);
@@ -4818,7 +4836,6 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_policy, float *label_value, float label_policy_visit[][MOVE_C_Y_X_ID_MAX])
 #endif
 {
-//	int ct1 = get_clock();
 	int sum_handicap[HANDICAP_TYPE] = { 0 };
 	int sum_result[3] = { 0 };
 	int sum_turn[2] = { 0 };
@@ -4830,7 +4847,9 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 	const int R_STREE_MAX = 10000;
 	static int r_stree[R_STREE_MAX] = {0};
 	static int r_stree_sum = 0;
-
+	static int success_sum = 0;
+	static int learned_sum = 0;
+	
 	// pos_sum の中から64個ランダムで選ぶ
 	int *ri = new int[mini_batch];
 	int *ri_moves = new int[mini_batch];
@@ -4997,8 +5016,10 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 #ifdef FURIBISHA
 		int success = 0;
 		if ( (p->furi_bit[t&1] & p->furi_hope_bit[t&1]) ) success = 1;
+		int furi_hope_bit = p->furi_hope_bit[t&1];
 		label_rook[i]    = (float)success;
-		label_rook_ok[i] = (t >= FURIBISHA_TO);
+		label_rook_ok[i] = (t <= FURIBISHA_TO);
+		success_sum += success;
 #endif
 #if ( TRAINED_NUM==1 )
 		p->v_trained_num[j]++;
@@ -5050,7 +5071,7 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 		float *pd = (float *)data + ONE_SIZE * i;
 		memset(pd, 0, sizeof(float)*ONE_SIZE);
 //		PRT("%2d:t=%d,win_r=%d,policy=%.0f\n",i,t,win_r,label_policy[i]); hyouji();
-		set_dcnn_channels((Color)bGoteTurn, t, pd, -1, p->handicap);
+		set_dcnn_channels((Color)bGoteTurn, t, pd, -1, p->handicap, furi_hope_bit);
 //		prt_dcnn_data_table((float(*)[B_SIZE][B_SIZE])pd);
 		if ( fSymmetry ) {
 			symmetry_dcnn_channels(pd);
@@ -5061,6 +5082,7 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 		sum_turn[bGoteTurn]++;
 		sum_t +=t;
 		sum_diff_win_r +=fabs(win_r - ave_r);
+		learned_sum++;
 
 		if ( PIECE_LEARN ) sum_pwv(win_r, bGoteTurn, piece_d_sum);
 
@@ -5088,9 +5110,9 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 			PRT("sum_n=%d:",sum_n);for (int k=0;k<11;k++) { PRT("%3d,",sum_r[k]); } PRT("\n");
 		}
 	}
-	if ( fPW ) PRT("\nhandicap=%d,%d,%d,%d,%d,%d,%d,result=%d,%d,%d,turn=%d,%d,ave_t=%.2f,ave_diff_win_r=%.5f\n"
+	if ( fPW ) PRT("\nhandicap=%d,%d,%d,%d,%d,%d,%d,result=%d,%d,%d,turn=%d,%d,ave_t=%.2f,ave_diff_win_r=%.5f,success_sum=%d(%f)\n"
 		,sum_handicap[0],sum_handicap[1],sum_handicap[2],sum_handicap[3],sum_handicap[4],sum_handicap[5],sum_handicap[6]
-		,sum_result[0],sum_result[1],sum_result[2], sum_turn[0],sum_turn[1], sum_t/mini_batch, sum_diff_win_r/mini_batch	);
+		,sum_result[0],sum_result[1],sum_result[2], sum_turn[0],sum_turn[1], sum_t/mini_batch, sum_diff_win_r/mini_batch, success_sum,(float)success_sum/learned_sum );
 //	PRT("%.2f sec, mini_batch=%d,%8d,%8.1f,%6.3f\n",get_spend_time(ct1), mini_batch, ri[0], label_policy[0], label_value[0]);
 	if ( PIECE_LEARN ) update_piece_w();
 	delete [] ri;
@@ -5365,17 +5387,15 @@ void start_zero_train(int *p_argc, char ***p_argv )
 	//評価用のデータを取得
 	const auto net      = solver->net();
 #if ( U8700==1 )
-//	const char sNet[] = "20190419replay_lr001_wd00002_100000_1018000/_iter_36000.caffemodel";	// w449
-//	const char sNet[] = "/home/yss/shogi/learn/snapshots/20231016/_iter_14145.caffemodel";      // w4329
-	const char sNet[] = "/home/yss/shogi/learn/20231230_233235_256x20b_mb256_Swish_from_63080k_from_20231225_185612_iter_800000.caffemodel";	// w4357
+	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/20240724/_iter_10000.caffemodel";      // w1
 #else
 //	const char sNet[] = "/home/yss/shogi/learn/snapshots/20210604/_iter_10000.caffemodel";	// w0001
 //	const char sNet[] = "/home/yss/shogi/learn/20231230_233235_256x20b_mb256_Swish_from_63080k_from_20231225_185612/_iter_800000.caffemodel";
 #endif
 
-	int next_weight_number = 2;	// 現在の最新の番号 +1
+	int next_weight_number = 3;	// 現在の最新の番号 +1
 
-//	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
+	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
 //	load_aoba_txt_weight( net, "/home/yss/w000000000689.txt" );	// 既存のw*.txtを読み込む。*.caffemodelを何か読み込んだ後に
 	LOG(INFO) << "Solving ";
 	PRT("fReplayLearning=%d,stree_total()=%lld,zero_kif_pos_num=%lu\n",fReplayLearning,stree_total(),zero_kif_pos_num);
@@ -5396,7 +5416,7 @@ wait_again:
 //		if ( iteration >= 100000*1 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration > 1000 ) solver_param.set_base_lr(0.01);
 	} else {
-		if ( 1 && iteration==0 && next_weight_number==2 ) {
+		if ( 1 && iteration==0 && next_weight_number==3 ) {
 			add = 100000;	// 初回のみダミーで10000棋譜追加したことにする
 		} else {
 			add = PS->wait_and_get_new_kif(next_weight_number);
