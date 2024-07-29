@@ -14,7 +14,7 @@ print(args[1])
 #sys.exit()
 
 caffe.set_mode_cpu()
-net = caffe.Net("/home/yss/prg/furibisha/rook_128x10b_ReLU_mb128.prototxt",args[1],caffe.TEST);
+net = caffe.Net("/home/yss/prg/furibisha/learn/rook_128x10b_ReLU_mb128.prototxt",args[1],caffe.TEST);
 
 
 
@@ -48,8 +48,8 @@ net = caffe.Net("/home/yss/prg/furibisha/rook_128x10b_ReLU_mb128.prototxt",args[
 
 
 def short_str(s):
-	r = '%.6g' % s
-	#r = '%.3g' % s     # LZ style. this is maybe ok.
+	#r = '%.6g' % s
+	r = '%.3g' % s     # LZ style. this is maybe ok.
 	u = r
 	if ( r[0:2]== '0.' ) :
 		u = r[1:]
@@ -72,11 +72,14 @@ print (n_layer)
 
 
 for loop in range(n_layer):
-	name = net.params.items()[loop][0]
-    #print loop , name
+	#name = net.params.items()[loop][0]
+	name = list(net.params.items())[loop][0]
+	#print loop , name
 	a0 = net.params[name][0].data.shape[0]
 	#print a0
 	ct = 0;
+	if 'conv1_rook_1x1_4' in name:
+		break
 	if 'bn' in name:
 		a1 = net.params[name][1].data.shape[0]
 		b0 = net.params[name][2].data.shape[0]

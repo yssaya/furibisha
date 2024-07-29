@@ -2831,8 +2831,9 @@ void free_zero_db_struct(ZERO_DB *p)
 
 //const int ZERO_DB_SIZE = 267000000;	// AI_book2
 //const int ZERO_DB_SIZE = 20000000;	// gct001-075
-const int ZERO_DB_SIZE = 10000;	// 100000,  500000
-//const int ZERO_DB_SIZE = 100000;	// 100000,  500000
+//const int ZERO_DB_SIZE = 10000;	// 100000,  500000
+const int ZERO_DB_SIZE = 100000;	// 100000,  500000
+//const int ZERO_DB_SIZE = 310000;
 const int MAX_ZERO_MOVES = 513;	// 512手目を後手が指して詰んでなければ。513手目を先手が指せば無条件で引き分け。
 ZERO_DB zdb_one;
 
@@ -2847,7 +2848,7 @@ const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-
 //const int ZDB_POS_MAX = ZERO_DB_SIZE * 1;	// AI book2
 
 int zdb_count = 0;
-int zdb_count_start = 110000;
+int zdb_count_start = 0;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
 uint64_t zero_kif_pos_num = 0;
 int zero_kif_games = 0;
 int zero_pos_over250;
@@ -3523,6 +3524,11 @@ void update_pZDBsum()
 	int furi_hope_count[2][9] = {0};
 	int furi_count[2][9] = {0};
 	int furi_ok[2][9] = {0};
+	int furi_recent_hope_count[2][9] = {0};
+	int furi_recent_count[2][9] = {0};
+	int furi_recent_ok[2][9] = {0};
+	int furi_win[9][9][4] = {0};
+	int furi_recent_win[9][9][4] = {0};
 #endif
 
 	PS->set_keep_pos();
@@ -3807,6 +3813,7 @@ kld = 1.0;	// ignore kld
 
 #ifdef FURIBISHA
 		// 実際に指した振り飛車の回数、希望した回数、実現した回数(割合)
+		int furi_b[2] = {-1,-1};
 		for (int k=0;k<2;k++) {
 			int hope = p->furi_hope_bit[k];
 			int bit  = p->furi_bit[k];
@@ -3815,11 +3822,25 @@ kld = 1.0;	// ignore kld
 				hope >>= 1;
 				furi_hope_count[k][8-j] += h;
 				int b = bit & 1;
+				if ( b ) {
+					if ( furi_b[k] != -1 ) DEBUG_PRT("");
+					furi_b[k] = 8-j;
+				}
 				bit >>= 1;
 				furi_count[k][8-j] += b;
 				furi_ok[k][8-j] += (h&b);
+				if ( p->index >= zdb_count - 10000 ) {
+					furi_recent_hope_count[k][8-j] += h;
+					furi_recent_count[k][8-j] += b;
+					furi_recent_ok[k][8-j] += (h&b);
+				}
 			}
 		}
+		if ( furi_b[0] == -1 || furi_b[1] == -1 ) DEBUG_PRT("");
+		furi_win[furi_b[0]][furi_b[1]][p->result]++;
+		if ( p->index >= zdb_count - 10000 ) furi_recent_win[furi_b[0]][furi_b[1]][p->result]++;
+
+
 #endif
 
 	}
@@ -3916,15 +3937,52 @@ kld = 1.0;	// ignore kld
 		}
 	}
 #ifdef FURIBISHA
+	PRT("furi_win:%d\n",zdb_count);
+	for (int y=0;y<9;y++) for (int x=0;x<9;x++) {
+		int *p = furi_win[y][x];
+		int s = *(p+0) + *(p+1) + *(p+2);
+		if ( s==0 ) s = 1;
+		PRT("%5d(%.3f)",s,(float)(*(p+1) + *(p+0)/2.0)/s);
+		if (x==8) PRT("\n");
+	}
+	PRT("furi_recent_win:%d\n",zdb_count);
+	for (int y=0;y<9;y++) for (int x=0;x<9;x++) {
+		int *p = furi_recent_win[y][x];
+		int s = *(p+0) + *(p+1) + *(p+2);
+		if ( s==0 ) s = 1;
+		PRT("%5d(%.3f)",s,(float)(*(p+1) + *(p+0)/2.0)/s);
+		if (x==8) PRT("\n");
+	}
+
+	PRT("furi_hope:%d\n",zdb_count);
 	for (int i=0;i<2;i++) {
+		int sum_k=0,sum_h=0,sum_b=0;
 		for (int j=0;j<9;j++) {
 			int h = furi_hope_count[i][j];
 			int b = furi_count[i][j];
 			int k = furi_ok[i][j];
 			if ( h==0 ) h = 1;
-			PRT("%d:%5d(%11f),%10d,hope=%10d\n",i,k,(float)k/h,b,h);
+			sum_k += k;
+			sum_b += b;
+			sum_h += h;
+			PRT("%d:%5d(%9f),%7d,hope=%7d\n",i,k,(float)k/h,b,h);
 		}
-		PRT("\n");
+		PRT(" :%5d(%9f),%7d,hope=%7d\n",sum_k,(float)sum_k/sum_h,sum_b,sum_h);
+	}
+	PRT("furi_hope_recent:%d\n",zdb_count);
+	for (int i=0;i<2;i++) {
+		int sum_k=0,sum_h=0,sum_b=0;
+		for (int j=0;j<9;j++) {
+			int h = furi_recent_hope_count[i][j];
+			int b = furi_recent_count[i][j];
+			int k = furi_recent_ok[i][j];
+			if ( h==0 ) h = 1;
+			sum_k += k;
+			sum_b += b;
+			sum_h += h;
+			PRT("%d:%5d(%9f),%7d,hope=%7d\n",i,k,(float)k/h,b,h);
+		}
+		PRT(" :%5d(%9f),%7d,hope=%7d\n",sum_k,(float)sum_k/sum_h,sum_b,sum_h);
 	}
 #endif
 
@@ -4464,7 +4522,8 @@ int shogi::wait_and_get_new_kif(int next_weight_n)
 //		int ret = system(str);	// fail all system() 20190817?
 		sleep(sleep_sec);
 //		int ret = system("/home/yss/koma_syn/rsync_one.sh");
-		int ret = system("/home/yss/tcp_backup/rsync_one.sh");
+//		int ret = system("/home/yss/tcp_backup/rsync_one.sh");
+		int ret = 0;
 		PRT("ret=%d\n",ret);
 		// 新規に追加されたファイルを調べる
 		for (;;) {
@@ -4895,6 +4954,10 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 //			if ( x < 2000 && (int)(rand_m521() % 200) > (x/10)  ) { i--; continue; }
 //			if ( x < 1000 && (int)(rand_m521() % 100) > (x/10)  ) { i--; continue; }
 		}
+                if ( 0 ) {
+                	int n = pZDBmove[r];
+			if ( n <= FURIBISHA_TO ) { i--; continue; }
+		}
 
 		int j;
 		for (j=0;j<i;j++) {
@@ -4992,8 +5055,28 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 			hanten_sasite_sayuu(&bz,&az,&tk,&nf);
 		}
 
+#ifdef FURIBISHA
+		int furi_r = -1;
+		int success = 0;
+		if ( (p->furi_bit[t&1] & p->furi_hope_bit[t&1]) ) success = 1;
+		if ( success ) furi_r = +1;
+		int furi_hope_bit = p->furi_hope_bit[t&1];
+		if ( t > FURIBISHA_TO ) {
+			label_rook_ok[i] = 0;
+			success = 0;
+		} else {
+			label_rook_ok[i] = 1;
+		}
+		label_rook[i]    = (float)success;
+		label_rook[i] = label_rook_ok[i] = 0;	// always loss is zero. 常に0に。このlossで着手に影響なし。勝率に直接影響させないとmctsでpolicyに変化なし。
+		success_sum += success;
+#endif
 		// 実際の勝敗と探索値の平均を学習。https://tadaoyamaoka.hatenablog.com/entry/2018/07/01/121411
+#ifdef FURIBISHA
+		float ave_r = ((float)win_r + score + furi_r) / 3.0;
+#else
 		float ave_r = ((float)win_r + score) / 2.0;
+#endif
 //		float ave_r = ((float)win_r*9.0 + score*1.0) / 10.0;
 
 //		float m = pZDBmaxmove[r];
@@ -5013,14 +5096,6 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 		label_policy[i] = (float)playmove_id;
 		label_value[i]  = (float)ave_r;
 
-#ifdef FURIBISHA
-		int success = 0;
-		if ( (p->furi_bit[t&1] & p->furi_hope_bit[t&1]) ) success = 1;
-		int furi_hope_bit = p->furi_hope_bit[t&1];
-		label_rook[i]    = (float)success;
-		label_rook_ok[i] = (t <= FURIBISHA_TO);
-		success_sum += success;
-#endif
 #if ( TRAINED_NUM==1 )
 		p->v_trained_num[j]++;
 #endif
@@ -5110,9 +5185,9 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 			PRT("sum_n=%d:",sum_n);for (int k=0;k<11;k++) { PRT("%3d,",sum_r[k]); } PRT("\n");
 		}
 	}
-	if ( fPW ) PRT("\nhandicap=%d,%d,%d,%d,%d,%d,%d,result=%d,%d,%d,turn=%d,%d,ave_t=%.2f,ave_diff_win_r=%.5f,success_sum=%d(%f)\n"
+	if ( fPW ) PRT("\nhandicap=%d,%d,%d,%d,%d,%d,%d,result=%d,%d,%d,turn=%d,%d,ave_t=%.2f,ave_diff_win_r=%.5f,success_sum=%d/%d(%f)\n"
 		,sum_handicap[0],sum_handicap[1],sum_handicap[2],sum_handicap[3],sum_handicap[4],sum_handicap[5],sum_handicap[6]
-		,sum_result[0],sum_result[1],sum_result[2], sum_turn[0],sum_turn[1], sum_t/mini_batch, sum_diff_win_r/mini_batch, success_sum,(float)success_sum/learned_sum );
+		,sum_result[0],sum_result[1],sum_result[2], sum_turn[0],sum_turn[1], sum_t/mini_batch, sum_diff_win_r/mini_batch, success_sum,learned_sum,(float)success_sum/learned_sum );
 //	PRT("%.2f sec, mini_batch=%d,%8d,%8.1f,%6.3f\n",get_spend_time(ct1), mini_batch, ri[0], label_policy[0], label_value[0]);
 	if ( PIECE_LEARN ) update_piece_w();
 	delete [] ri;
@@ -5123,14 +5198,13 @@ void convert_caffemodel(int iteration, int weight_number)
 {
 	print_time();
 	PRT(",convert_caffemodel. weight_number=%4d,zdb_count=%10d,iteration=%d\n",weight_number,zdb_count,iteration);
-	FILE *fp = fopen("/home/yss/test/extract/aoba.sh","w");
+	FILE *fp = fopen("/home/yss/prg/furibisha/learn/extract/aoba.sh","w");
 	if ( fp==NULL ) DEBUG_PRT("");
 	fprintf(fp,"#!/bin/bash\n");
-	fprintf(fp,"cd /home/yss/test/extract/\n");
+	fprintf(fp,"cd /home/yss/prg/furibisha/learn/extract/\n");
 	fprintf(fp,"export LD_LIBRARY_PATH=/home/yss/caffe_cpu/build/lib:\n");
 	fprintf(fp,"export PYTHONPATH=/home/yss/caffe_cpu/python:$PYTHONPATH\n");
-//	fprintf(fp,"python ep_del_bn_scale_factor_version_short_auto.py /home/yss/shogi/yssfish/snapshots/_iter_%d.caffemodel\n",iteration);
-	fprintf(fp,"python ep_del_bn_scale_factor_version_short_auto.py /home/yss/shogi/learn/snapshots/_iter_%d.caffemodel\n",iteration);
+	fprintf(fp,"python3 ep_del_bn_scale_factor_version_short_auto.py /home/yss/prg/furibisha/learn/snapshots/_iter_%d.caffemodel\n",iteration);
 #if 0
 	fprintf(fp,"hash=`sha256sum binary.txt | awk '{print $1}'`\n");
 	fprintf(fp,"mv binary.txt ${hash}_w%012d.txt\n",weight_number);
@@ -5139,13 +5213,15 @@ void convert_caffemodel(int iteration, int weight_number)
 #else
 	fprintf(fp,"mv binary.txt w%012d.txt\n",weight_number);
 	fprintf(fp,"xz -9 -z -k w%012d.txt\n",weight_number);
-	fprintf(fp,"mv w%012d.txt.xz  ../../tcp_backup/weight/\n",weight_number);
+//	fprintf(fp,"mv w%012d.txt.xz  ../../tcp_backup/weight/\n",weight_number);
+	fprintf(fp,"mv w%012d.txt.xz  ../../weight/\n",weight_number);
 #endif
 	fclose(fp);
-	int ret = system("bash /home/yss/test/extract/aoba.sh");
+//	int ret = system("bash /home/yss/test/extract/aoba.sh");
+	int ret = system("bash /home/yss/prg/furibisha/learn/extract/aoba.sh");
 
 	ret = system("sleep 10");
-	ret = system("/home/yss/tcp_backup/rsync_weight_only.sh");
+//	ret = system("/home/yss/tcp_backup/rsync_weight_only.sh");
 	(void)ret;
 }
 
@@ -5387,13 +5463,14 @@ void start_zero_train(int *p_argc, char ***p_argv )
 	//評価用のデータを取得
 	const auto net      = solver->net();
 #if ( U8700==1 )
-	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/20240724/_iter_10000.caffemodel";      // w1
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/20240724/_iter_10000.caffemodel";      // w1
+	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_80000.caffemodel";
 #else
 //	const char sNet[] = "/home/yss/shogi/learn/snapshots/20210604/_iter_10000.caffemodel";	// w0001
 //	const char sNet[] = "/home/yss/shogi/learn/20231230_233235_256x20b_mb256_Swish_from_63080k_from_20231225_185612/_iter_800000.caffemodel";
 #endif
 
-	int next_weight_number = 3;	// 現在の最新の番号 +1
+	int next_weight_number = 19;	// 現在の最新の番号 +1
 
 	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
 //	load_aoba_txt_weight( net, "/home/yss/w000000000689.txt" );	// 既存のw*.txtを読み込む。*.caffemodelを何か読み込んだ後に
@@ -5416,16 +5493,16 @@ wait_again:
 //		if ( iteration >= 100000*1 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration > 1000 ) solver_param.set_base_lr(0.01);
 	} else {
-		if ( 1 && iteration==0 && next_weight_number==3 ) {
-			add = 100000;	// 初回のみダミーで10000棋譜追加したことにする
+		if ( 1 && iteration==0 && next_weight_number==19 ) {
+			add = 1500;	// 初回のみダミーで10000棋譜追加したことにする
 		} else {
 			add = PS->wait_and_get_new_kif(next_weight_number);
 		}
 	}
 
 #if ( U8700==1 )
-//	const float ADJUST = 1.07142857;
-	const float ADJUST = 0.4715; // 1棋譜、平均85.1手 * 0.7092 = 60.35手。1棋譜読み込んで60.35回学習、が1局面1回になる。60.35292 / 128 = 0.4715071875
+//	const float ADJUST = 0.4715; // 1棋譜、平均85.1手 * 0.7092 = 60.35手。1棋譜読み込んで60.35回学習、が1局面1回になる。60.35292 / 128 = 0.4715071875
+	const float ADJUST = 1;
 #else
 	const float ADJUST = 1;
 #endif
@@ -5440,7 +5517,8 @@ wait_again:
 		remainder = add - nLoop * min_n;
 	}
 
-	const int ITER_WEIGHT_BASE = 14145; //32000*AVE_MOVES / (ITER_SIZE*MINI_BATCH);	// 10000棋譜(平均128手)ごとにweightを作成
+//	const int ITER_WEIGHT_BASE = 14145; //32000*AVE_MOVES / (ITER_SIZE*MINI_BATCH);	// 10000棋譜(平均128手)ごとにweightを作成
+	const int ITER_WEIGHT_BASE = 10000; //32000*AVE_MOVES / (ITER_SIZE*MINI_BATCH);	// 10000棋譜(平均128手)ごとにweightを作成
 	int iter_weight_limit = ITER_WEIGHT_BASE;
 	float reduce = 1.0;	// weightは10000棋譜ごとで学習回数を10000から8000などに減らす。棋譜生成速度が速すぎるため
 	FILE *fp = fopen("reduce.txt","r");

@@ -908,7 +908,7 @@ int uct_search_start(tree_t * restrict ptree, int sideToMove, int ply, char *buf
 	}
 
 //	{ make_balanced_opening(ptree, sideToMove, ply); return 0; }
-	int nFuriPos = getFuriPos(ptree, sideToMove, ply);
+	int nFuri = getFuriPos(ptree, sideToMove, ply);
 
 	HASH_SHOGI *phg = HashShogiReadLock(ptree, sideToMove);
 	create_node(ptree, sideToMove, ply, phg);
@@ -1193,7 +1193,7 @@ int uct_search_start(tree_t * restrict ptree, int sideToMove, int ply, char *buf
 	double softmax_temp = cfg_random_temp;
 //	int rate = nHandicapRate[nHandicap];
 	int rate = 0;
-	if ( nFuriPos >= 0 ) rate = nFuriHandicapRate[nFuriPos];
+	if ( nFuri >= 0 ) rate = nFuriHandicapRate[nFuri];
 	int is_weaken = 0;
 
 	// 1400点差まではsoftmaxの温度で。1400+1157 = 2557差までは合法手ランダムで。
@@ -2302,6 +2302,22 @@ int getCmdLineParam(int argc, char *argv[])
 			PRT("name=%s\n",q);
 			continue;
 		}
+		if ( strstr(p,"-fs") ) {	// "-fs 001000000" 先手3間飛車
+			for (int i=0; i<9; i++) nFuriPos[i+0] = (q[i]=='1');
+			PRT("fs=%s\n",q);
+			continue;
+		}
+		if ( strstr(p,"-fg") ) {	// "-fg 000001000" 後手4間飛車
+			for (int i=0; i<9; i++) nFuriPos[i+9] = (q[i]=='1');
+			PRT("fg=%s\n",q);
+			for (int i=0; i<18; i++) {
+				PRT("%d",nFuriPos[i]);
+				if ( i==8 ) PRT(":");
+			}
+			PRT("\n");
+			continue;
+		}
+
 #ifdef USE_OPENCL
 		if ( strstr(p,"-dirtune") ) {
 			PRT("DirTune=%s\n",q);

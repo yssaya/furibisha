@@ -1636,13 +1636,18 @@ void update_FuriHandicapRate(const char *str)
 }
 void update_FuriPos(const char *str)
 {
-  // "00000010:000001000"
+  // "001000000:000001000"
 	int i;
 	for (i=0; i<18; i++) {
 		char c = str[i+(i>8)];
 		nFuriPos[i] = (c=='1');
 	}
-	PRT("FP:");	for (i=0; i<18; i++) PRT("%d",nFuriPos[i]); PRT("\n");
+	PRT("FP=");
+	for (i=0; i<18; i++) {
+		PRT("%d",nFuriPos[i]);
+		if ( i==8 ) PRT(":");
+	}
+	PRT("\n");
 }
 
 // 現在の棋譜から振り飛車の位置を判定
@@ -1689,6 +1694,4 @@ int getFuriPos(tree_t * restrict ptree, int /*sideToMove*/, int ply)
 	if ( ret < 0 || ret >= 81 ) DEBUG_PRT("");
 	return ret;
 }
-
-
 

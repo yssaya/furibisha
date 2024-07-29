@@ -141,7 +141,8 @@ extern unsigned char ailast_one[512];
 //#define BNZ_VER                 "41"	// 20231207 kldgain 0.0000004, kldinterval 400, -p 12800, ave playouts is 3180/move.
 //#define BNZ_VER                 "42"	// 20240214 nDrawMove 0 -> 513 default, MAX_DRAW_MOVES = 513
 
-#define BNZ_VER                 "100"	// 20240722 AobaFuribisha
+//#define BNZ_VER                 "100"	// 20240722 AobaFuribisha
+#define BNZ_VER                 "101"	// 20240729 -fs,-fg option
 
 #define BNZ_NAME                "AobaZero"
 
