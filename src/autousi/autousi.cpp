@@ -186,7 +186,7 @@ static void output() noexcept {
   print_csa_num   = 0;
   time_last       = time_now;
   puts("");
-  puts("+---+---+--------+-------< Aobaz Status >--------------------------+");
+  puts("+---+---+--------+-------< Aobaf Status >--------------------------+");
   puts("|ID |Dev| Average|                   Moves                         |");
   puts("+---+---+--------+-------------------------------------------------+");
   for (uint u = 0; u < PlayManager::get().get_nengine(); ++u) {
@@ -208,7 +208,7 @@ static void output() noexcept {
     printf("|%s|%s|%6.0fms|%3d:%-45s|\n",
 	   spid, sdev, time_ave, PlayManager::get().get_nmove(u), buf); }
   puts("+---+---+--------+-------------------------------------------------+");
-  printf("- Send:   Sent %d, Lost %d, Wait %d, ",
+  printf("- Sent %d, Lost %d, Wait %d, ",
 	 nsend, ndiscard, ntot - nsend - ndiscard);
 /*
   printf("HandicapR ");
@@ -219,12 +219,16 @@ static void output() noexcept {
   }
   printf("\n");
 */
-  printf("AverageWinrate %.3f\n",(float)(Client::get().get_average_winrate())/1000.0f);
-
+//printf("AverageWinrate %.3f\n",(float)(Client::get().get_average_winrate())/1000.0f);
+  const  int *ph = Client::get().get_rook_handicap();
+  printf("HR[]");
+  for (int i=0;i<9;i++) printf("%4d",ph[63+i]);
+  printf("\n");
+  
   int64_t wght_id        = Client::get().get_wght()->get_id();
   bool    is_downloading = Client::get().is_downloading();
   const char *buf_time   = Client::get().get_buf_wght_time();
-  printf("- Recv:   Weight's ID %" PRIi64 ", resign-th %.3f, ",
+  printf("- Weight's ID %" PRIi64 ", resign-th %.3f, ",
 	 wght_id, Client::get().get_th_resign());
 
   if (is_downloading) puts("NOW DOWNLOADING NEW WEIGHTS");

@@ -16,6 +16,7 @@
 #include "yss_prot.h"    /**  load prototype function **/
 
 #include "yss.h"
+#include "../src/common/param.hpp"
 
 #if !defined(_MSC_VER)
 #include <dirent.h>
@@ -30,7 +31,7 @@ const int f2187 = 1;
 const int f2187 = 0;
 #endif
 
-const int HANDICAP_TYPE = 7;
+//const int HANDICAP_TYPE = 7;
 
 #define USE_CAFFE 1
 
@@ -2848,7 +2849,7 @@ const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-
 //const int ZDB_POS_MAX = ZERO_DB_SIZE * 1;	// AI book2
 
 int zdb_count = 0;
-int zdb_count_start = 0;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
+int zdb_count_start = 900000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
 uint64_t zero_kif_pos_num = 0;
 int zero_kif_games = 0;
 int zero_pos_over250;
@@ -3397,6 +3398,94 @@ void count_recent_handicap_result(int h, int width, int result[])
 	}
 }
 
+void count_recent_rook_handicap_result(int h, int last, int result[])
+{
+	result[0] = result[1] = result[2] = 0;
+//	int w = width * HANDICAP_TYPE;
+	int loop = zdb_count;
+	if ( loop > ZERO_DB_SIZE ) loop = ZERO_DB_SIZE;
+	for (int i=0;i<loop;i++) {
+		ZERO_DB *p = &zdb[i];
+		if ( p->index <= last ) continue;
+		// 実際に指した振り飛車の回数、希望した回数、実現した回数(割合)
+		int furi_b[2] = {-1,-1};
+		for (int k=0;k<2;k++) {
+//			int hope = p->furi_hope_bit[k];
+			int bit  = p->furi_bit[k];
+			for (int j=0;j<9;j++) {
+//				int h = hope & 1;
+//				hope >>= 1;
+				int b = bit & 1;
+				if ( b ) {
+					if ( furi_b[k] != -1 ) DEBUG_PRT("");
+					furi_b[k] = 8-j;
+				}
+				bit >>= 1;
+			}
+		}
+		if ( furi_b[0] == -1 || furi_b[1] == -1 ) DEBUG_PRT("");
+		if ( h != furi_b[0]*9 + furi_b[1] ) continue;
+		result[p->result]++;
+	}
+}
+
+
+const char ROOK_HANDICAP_SYN[] = "../handicap/rook_handicap.txt";
+const char ROOK_HANDICAP_ID[]  = "rook_handicap_id.txt";
+int nRookHandicapRate[ROOK_HANDICAP_NUM];
+int nRookHandicapLastID[ROOK_HANDICAP_NUM];
+
+void load_rook_handicap_id()
+{
+	static bool bDone = false;
+	if ( bDone ) return;
+	bDone = true;
+	FILE *fp = fopen(ROOK_HANDICAP_ID,"r");
+	if ( fp==NULL ) DEBUG_PRT("fail open.\n");
+	PRT("\nnRookHandicapRate  =");
+	for (int i=0; i<ROOK_HANDICAP_NUM; i++) {
+		char str[TMP_BUF_LEN];
+		if ( fgets( str, TMP_BUF_LEN, fp ) == NULL ) DEBUG_PRT("");
+		int ret = sscanf(str,"%d %d",&nRookHandicapRate[i],&nRookHandicapLastID[i]);
+		if ( ret != 2 ) DEBUG_PRT("ret=%d\n",ret);
+		PRT("%5d %d",nRookHandicapRate[i],nRookHandicapLastID[i]);
+	}
+	PRT("\n");
+	fclose(fp);
+}
+
+void save_rook_handicap()
+{
+	FILE *fp = fopen(ROOK_HANDICAP_ID,"w");
+	if ( fp==NULL ) DEBUG_PRT("fail open.\n");
+	for (int i=0; i<ROOK_HANDICAP_NUM; i++) {
+		fprintf(fp,"%d %d\n",nRookHandicapRate[i],nRookHandicapLastID[i]);
+	}
+	fclose(fp);
+
+	fp = fopen(ROOK_HANDICAP_SYN,"w");
+	if ( fp==NULL ) {
+		PRT("fail open %s\n",ROOK_HANDICAP_SYN);
+	} else {
+		for (int i=0; i<ROOK_HANDICAP_NUM; i++) {
+			fprintf(fp,"%d\n",nRookHandicapRate[i]);
+		}
+		fclose(fp);
+	}
+
+	fp = fopen("rook_handicap_history.txt","a");
+	if ( fp==NULL ) DEBUG_PRT("fail open.\n");
+
+	for (int i=0; i<ROOK_HANDICAP_NUM; i++) {
+		if ( i>0 ) fprintf(fp,",");
+		fprintf(fp,"(%4d)%9d",nRookHandicapRate[i],nRookHandicapLastID[i]);
+	}
+	fprintf(fp,"\n");
+	fclose(fp);
+}
+
+
+
 uint64_t keep_pos_d_all;
 int keep_pos_d[ZERO_DB_SIZE];
 int keep_pos_n;
@@ -3490,7 +3579,10 @@ void update_pZDBsum()
 	const int WR_OK_GAMES = 8000;	// 直近のこの対局数の勝率でレートを変動
 	float kld_sum = 0;
 	float sdiff_sum = 0;
-	if ( GCT_SELF==0 ) load_handicap_rate();
+	if ( GCT_SELF==0 ) {
+		load_handicap_rate();
+		load_rook_handicap_id();
+	}
 	const int MAX_GAMES = (WR_OK_GAMES*12/10)*H;
 	int i;
 	for (i=0;i<H;i++) {
@@ -3529,6 +3621,7 @@ void update_pZDBsum()
 	int furi_recent_ok[2][9] = {0};
 	int furi_win[9][9][4] = {0};
 	int furi_recent_win[9][9][4] = {0};
+	static float furi_resent_graph[50][9] = {0};
 #endif
 
 	PS->set_keep_pos();
@@ -3839,8 +3932,6 @@ kld = 1.0;	// ignore kld
 		if ( furi_b[0] == -1 || furi_b[1] == -1 ) DEBUG_PRT("");
 		furi_win[furi_b[0]][furi_b[1]][p->result]++;
 		if ( p->index >= zdb_count - 10000 ) furi_recent_win[furi_b[0]][furi_b[1]][p->result]++;
-
-
 #endif
 
 	}
@@ -3861,7 +3952,7 @@ kld = 1.0;	// ignore kld
  			kachi[i][1],kachi[i][2],res_kind[i][1],res_kind[i][2],
 			res_type[i][1],res_type[i][3],res_type[i][4],res_type[i][5],res_type[i][6] );
 	}
-
+/*
 	bool fUpdate = false;
 	(void)fUpdate;
 	int hand_diff[H] = { 0 };
@@ -3909,9 +4000,72 @@ kld = 1.0;	// ignore kld
 		}
 	}
 //	if ( fUpdate ) save_handicap_rate();
-
+*/
 //	float ave_winrate = (float)(res_total_sum[0][1] + res_total_sum[0][0]/2.0)/(res_total_sum[0][0]+res_total_sum[0][1]+res_total_sum[0][2]);
 //	save_average_winrate(ave_winrate);
+
+
+	bool fUpdate = false;
+	int hand_diff[ROOK_HANDICAP_NUM] = { 0 };
+	for (int i=0; i<ROOK_HANDICAP_NUM; i++) {
+		hand_diff[i] = 0;
+		bool fOK = false;
+		double wr = 0;
+		double sum = 0;
+
+		int last = nRookHandicapLastID[i];
+		int h_res[3];
+		count_recent_rook_handicap_result(i, last, h_res);
+		sum = 0;
+		for (int j=0;j<3;j++) sum += h_res[j];
+		if ( sum == 0 ) sum = 1;
+		double wins = (double)h_res[1] + (double)h_res[0]/2.0f;
+		wr = wins / sum;	// 先手(下手)勝率
+//		if ( k==0 && (wr > 0.60 || wr < 0.40) ) fOK = true;
+//		if ( k==1 && (wr > 0.58 || wr < 0.42) ) fOK = true;
+//		if ( k==2 && (wr > 0.56 || wr < 0.44) ) fOK = true;
+//		if ( k==3                             ) fOK = true;
+//		if ( fOK ) break;
+
+		if ( wr <= 0.01 ) wr = 0.01;
+		if ( wr >= 0.99 ) wr = 0.99;
+	
+		double div = 2000.0 / sum;
+		if ( div < 2.0 ) div = 2.0;	// 基本は半分の値で動かす
+//		if ( sum < 1000 ) div =   2.0;
+//		if ( sum <  500 ) div =   4.0;
+//		if ( sum <  200 ) div =  10.0;
+//		if ( sum <  100 ) div =  20.0;	// 100局なら0.60( +70) で +3
+//		if ( sum <   50 ) div =  40.0;
+//		if ( sum <   10 ) div = 200.0;	//  10局なら0.80(+250) で +1 程度
+
+		double d = -400.0 * log10(1.0 / wr - 1.0);
+		int d2 = (int)(d / div);
+
+		if ( sum >= 1000 ) fOK = true;
+		if ( zdb_count - last >= ZERO_DB_SIZE ) fOK = true;	// 強制的に更新
+		if ( fOK == false ) continue;
+	
+		int prev = nRookHandicapRate[i];
+		nRookHandicapRate[i] += d2;
+		PRT("%3d:%5.0f,%5.3f(%4d)%4d,div=%6.1f,last=%9d\n",i,sum,wr,d2,div,nRookHandicapRate[i],last);
+		const int RMAX = 1400+1157 - 100;
+//		if ( nRookHandicapRate[i] <    0 ) nRookHandicapRate[i] = 0;
+		if ( nRookHandicapRate[i] >  RMAX ) nRookHandicapRate[i] =  RMAX;
+		if ( nRookHandicapRate[i] < -RMAX ) nRookHandicapRate[i] = -RMAX;
+		hand_diff[i] = nRookHandicapRate[i] - prev;
+		nRookHandicapLastID[i] = zdb_count;
+		fUpdate = true;
+	}
+	if ( fUpdate ) save_rook_handicap();
+
+	PRT("RookHandicap:%d\n",zdb_count);
+	for (int i=0; i<ROOK_HANDICAP_NUM; i++) {
+		PRT("%5d",nRookHandicapRate[i]);
+		if ( ((i+1)%9)==0 ) PRT("\n");
+	}
+
+
 
 //	PRT("H:"); for (i=0;i<H;i++) { PRT("%8d %4d(%3d)",nHandicapLastID[i], nHandicapRate[i], hand_diff[i]); } PRT("\n");
 	if ( fSumTree ) {
@@ -3970,6 +4124,7 @@ kld = 1.0;	// ignore kld
 		PRT(" :%5d(%9f),%7d,hope=%7d\n",sum_k,(float)sum_k/sum_h,sum_b,sum_h);
 	}
 	PRT("furi_hope_recent:%d\n",zdb_count);
+	static int nGraph;
 	for (int i=0;i<2;i++) {
 		int sum_k=0,sum_h=0,sum_b=0;
 		for (int j=0;j<9;j++) {
@@ -3981,9 +4136,20 @@ kld = 1.0;	// ignore kld
 			sum_b += b;
 			sum_h += h;
 			PRT("%d:%5d(%9f),%7d,hope=%7d\n",i,k,(float)k/h,b,h);
+			if ( i==0 ) furi_resent_graph[nGraph][j] = (float)k/h;
 		}
 		PRT(" :%5d(%9f),%7d,hope=%7d\n",sum_k,(float)sum_k/sum_h,sum_b,sum_h);
 	}
+	if ( 0 && nGraph > 31 ) {
+		for (int j=0;j<9;j++) {
+			PRT("furi_resent_graph=%d,nGraph=%d\n",j,nGraph);
+			for (int i=0;i<nGraph;i++) {
+				PRT("%9f\n",furi_resent_graph[i][j]);
+			}
+		}
+	}
+	if ( nGraph < 50-1 ) nGraph++;
+
 #endif
 
 	if ( emul_err ) DEBUG_PRT("emul_err=%d\n",emul_err);
@@ -4552,7 +4718,8 @@ if ( fSumTree ) return 0;
 
     int new_kif_n = zdb_count;
     int add_kif_sum = 0;
-    int add = 2000*10;	// sumtreeの再計算に時間がかかるので、300万棋譜Windowsでは2万に
+//    int add = 2000*10;	// sumtreeの再計算に時間がかかるので、300万棋譜Windowsでは2万に
+    int add = 10000;	// sumtreeの再計算に時間がかかるので、300万棋譜Windowsでは2万に
     int i;
 	for (i=0;i<add;i++) {
 	    if ( is_exist_kif_file(new_kif_n)==0 ) {
@@ -4886,6 +5053,8 @@ void update_piece_w()
 
 static uint64_t rand_try = 0;
 static uint64_t rand_batch = 0;
+float furi_base_mix;
+int furi_ignore_moves;
 
 #ifdef FURIBISHA
 void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_policy, float *label_value, float *label_rook, float *label_rook_ok, float label_policy_visit[][MOVE_2187_MAX])
@@ -5056,7 +5225,7 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 		}
 
 #ifdef FURIBISHA
-		int furi_r = -1;
+		float furi_r = -1;
 		int success = 0;
 		if ( (p->furi_bit[t&1] & p->furi_hope_bit[t&1]) ) success = 1;
 		if ( success ) furi_r = +1;
@@ -5073,7 +5242,13 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 #endif
 		// 実際の勝敗と探索値の平均を学習。https://tadaoyamaoka.hatenablog.com/entry/2018/07/01/121411
 #ifdef FURIBISHA
-		float ave_r = ((float)win_r + score + furi_r) / 3.0;
+//		float ave_r = ((float)win_r + score + furi_r) / 3.0;
+		float a     = ((float)win_r + score) / 2.0;
+		// 80手目でfuri_rを無効に。30手目ぐらいだとPVが長いと突き抜けてしまう
+		float mix = furi_base_mix - furi_base_mix/(furi_ignore_moves - FURIBISHA_TO) * (t - FURIBISHA_TO);
+		if ( t <= FURIBISHA_TO      ) mix = furi_base_mix;
+		if ( t >  furi_ignore_moves ) mix = 0;
+		float ave_r = (1.0 - mix)*a + mix*furi_r;
 #else
 		float ave_r = ((float)win_r + score) / 2.0;
 #endif
@@ -5464,13 +5639,13 @@ void start_zero_train(int *p_argc, char ***p_argv )
 	const auto net      = solver->net();
 #if ( U8700==1 )
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/20240724/_iter_10000.caffemodel";      // w1
-	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_80000.caffemodel";
+	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_450000.caffemodel";
 #else
 //	const char sNet[] = "/home/yss/shogi/learn/snapshots/20210604/_iter_10000.caffemodel";	// w0001
 //	const char sNet[] = "/home/yss/shogi/learn/20231230_233235_256x20b_mb256_Swish_from_63080k_from_20231225_185612/_iter_800000.caffemodel";
 #endif
 
-	int next_weight_number = 19;	// 現在の最新の番号 +1
+	int next_weight_number = 95;	// 現在の最新の番号 +1
 
 	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
 //	load_aoba_txt_weight( net, "/home/yss/w000000000689.txt" );	// 既存のw*.txtを読み込む。*.caffemodelを何か読み込んだ後に
@@ -5488,13 +5663,14 @@ wait_again:
 		add = PS->add_a_little_from_archive();
 		if ( add < 0 ) { PRT("done..\n"); solver->Snapshot(); return; }
 		if ( zdb_count <=  ZERO_DB_SIZE ) goto wait_again;
+goto wait_again;
 //		if ( zdb_count <= 18850000 ) goto wait_again;
 //		if ( zdb_count >  13000000 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration >= 100000*1 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration > 1000 ) solver_param.set_base_lr(0.01);
 	} else {
-		if ( 1 && iteration==0 && next_weight_number==19 ) {
-			add = 1500;	// 初回のみダミーで10000棋譜追加したことにする
+		if ( 1 && iteration==0 && next_weight_number==95 ) {
+			add = 3100;	// 初回のみダミーで10000棋譜追加したことにする
 		} else {
 			add = PS->wait_and_get_new_kif(next_weight_number);
 		}
@@ -5531,10 +5707,18 @@ wait_again:
 		}
 		nLoop             = (int)(reduce * nLoop);
 		iter_weight_limit = (int)(reduce * ITER_WEIGHT_BASE);
-		PRT("reduce=%7.4f, add=%d,nLoop=%d,iter_weight_limit=%d/%d\n",reduce,add,nLoop,iter_weight_limit,ITER_WEIGHT_BASE);
 		if ( reduce <= 0 || reduce > 1.0 || iter_weight_limit <= 0 ) DEBUG_PRT("");
 		fclose(fp);
 	}
+
+	fp = fopen("furi_base_mix.txt","r");
+	if ( fp==NULL ) DEBUG_PRT("");
+	char str[TMP_BUF_LEN];
+	if ( fgets( str, TMP_BUF_LEN, fp ) == NULL ) DEBUG_PRT("");
+	int ret = sscanf(str,"%d %f",&furi_ignore_moves,&furi_base_mix);
+	if ( ret !=2 || furi_ignore_moves <= 0 || furi_base_mix < 0 ) DEBUG_PRT("");
+	fclose(fp);
+	PRT("reduce=%7.4f, add=%d,nLoop=%d,iter_weight_limit=%d/%d,furi_ignore_moves=%d,mix=%.3f\n",reduce,add,nLoop,iter_weight_limit,ITER_WEIGHT_BASE,furi_ignore_moves,furi_base_mix);
 
 //nLoop /= 4;
 //nLoop *= 0.261;	// *= 2.66 ... 800000 iteration / ((600000 kifu/ 2000) * 1000 Loop) = 2.66

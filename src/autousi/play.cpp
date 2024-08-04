@@ -331,7 +331,7 @@ public:
 //  _flag_do_resign = false;  // 20210610
 
     const char *str_turn[2] = { "+", "-" };
-    char buf[256];
+    char buf[256*4];
     sprintf(buf, "%s\n%s\n",str_init_csa[_handicap], str_turn[(_handicap!=0)]);
 //  _record_main    = string("PI\n+\n");
     _record_main    = string(buf);
