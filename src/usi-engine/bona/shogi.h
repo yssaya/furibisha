@@ -142,9 +142,10 @@ extern unsigned char ailast_one[512];
 //#define BNZ_VER                 "42"	// 20240214 nDrawMove 0 -> 513 default, MAX_DRAW_MOVES = 513
 
 //#define BNZ_VER                 "100"	// 20240722 AobaFuribisha
-#define BNZ_VER                 "101"	// 20240729 -fs,-fg option
+//#define BNZ_VER                 "101"	// 20240729 -fs,-fg option
+#define BNZ_VER                 "102"	// 20240811 set_rand_FuriPos()
 
-#define BNZ_NAME                "AobaZero"
+#define BNZ_NAME                "AobaFuribisha"
 
 //#define BNZ_VER                 "16"	// 20210528 komaochi, mate3
 //#define BNZ_VER                 "17"	// 20210607 bug fix. does not tend to move 1 ply mate.

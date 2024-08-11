@@ -1,87 +1,98 @@
 The text written in English is [here](README_en.md).
-# おねがい
-みなさん！将棋人工知能(AI)がゼロから学習し、強くなっていく過程を一緒に観察しませんか？  
-世界中から計算資源を獲得するために、ユーザ参加型のコンテンツを作成しました。  
+# Aoba振り飛車
 
-集めた棋譜はAobaZeroの[ウェブページ](http://www.yss-aya.com/aobazero/)などで公開しています。  
-GPUがあれば、より高速に棋譜を生成できます。
-CPUだと10倍から100倍遅くなりますが、将棋をプレイして楽しむことは可能です。
+「Aoba振り飛車」は、将棋の振り飛車を人間の知識なしでゼロから深層強化学習させるユーザ参加型の将棋人工知能プロジェクトです。  
+対抗系の先手四間飛車、後手中飛車などに加えて、先手1間飛車、後手向飛車、などの相振りも学習します。
+どの筋に飛車を振っても勝率が5割になるように強さを自動調節しています。
+AIは振り飛車の新しい指し方を発見できるでしょうか？1間飛車や9間飛車はどんな指し方に？
 
-# AobaFuribisha
+知識ゼロ、と書きましたが、厳密には「振り飛車の定義」と「希望する筋に飛車を振れたことへのボーナス」を
+与えています。詳しくは[こちらを](http://www.yss-aya.com/furibisha/furi.html)。
 
-AobaZeroは、AlphaZeroの将棋の実験の追試を行うことを最終目的とした将棋AIプロジェクトです。
-AlphaZeroは、Silverら（2017b, 2018）が発表した強化学習のアルゴリズムの一種であり、
-AIプレイヤの名前でもあります。
-彼らが報告した将棋での実験結果は、ゲームルール以外の知識をほとんど持たないプレイヤが自己と対局し続けて、AIプレイヤelmoよりも強くなるというものでした。
-これは非常に規模の大きな実験であり、追試を行うことは容易ではありません。
-高性能なデスクトップゲーミングマシン1台で100年近い計算時間を要します。  
-  
-Silverら（2017a, 2018）は囲碁やチェスでの実験結果も報告しています。
-ユーザ参加型の追試実験は、囲碁の[Leela Zero](https://zero.sjeng.org)
-やチェスの[LCZero](https://lczero.org)によって行われていて、
-既に人間を超える棋力を獲得するということが再現されています。
+集めた棋譜や棋力のグラフ、棋譜のサンプルなどは[こちら](http://www.yss-aya.com/furibisha/)で公開しています。
+「Aoba振り飛車」は以下のプロジェクトの後継でもあります。
+[AobaZero](http://www.yss-aya.com/aobazero/)
+[Aoba駒落ち](http://www.yss-aya.com/komaochi/)
+
+GPUがあれば、より高速に棋譜を生成できます。  
+CPUだと10倍から100倍遅くなりますが、将棋をプレイして楽しむことは可能です。  
 
 # 棋譜の生成に協力してみたい
-[Windows用の実行ファイル(現在は64bit版のみです)](https://github.com/kobanium/aoba-zero/releases)
+[Windows用の実行ファイル(64bit版のみです)](https://github.com/yssaya/furibisha/releases)
 
 CPUだけのマシンは
 ```
-aobazero-1.5-w64-cpu-only.zip
+aobafuribisha-1.0-w64-cpu-only.zip
 ```
 GPUがついたマシンは
 ```
-aobazero-1.5-w64-opencl.zip
+aobafuribisha-1.0-w64-opencl.zip
 ```
-をダウンロード、展開して、中のclick_me.batを実行してください。
+をダウンロード、展開して、中のclick_me.batを実行してください。  
+GPUの種類によっては autousi.cfg の  
+```
+Device        O-1:7:21W
+```
+を変更することでより高速で動作する場合があります。[autousi.cfg](autousi.cfg) の他のサンプルをご参考下さい。ただWindows版ではプロセス数を36以上に増やすと起動に失敗することがあります。  
 
 Linuxの方は
 ```
-aobazero-1.5.tar.gz
+furibisha-1.0.tar.gz
 ```
 を展開してmakeしてから
 ```
 ./bin/autousi
 ```
-を実行してください。詳しくは同梱のreadme.txtをご覧ください。
+を実行してください。
 
 # 将棋所で遊んでみたい
-CPU版をダウンロードして、click_me.batを実行します。しばらくすると最新のネットワークの重みファイルをダウンロードして「self-play start」が表示されて棋譜の生成を開始します。すかさずCtrl + Cで停止させます。(signal 1 caught)が表示されて、しばらく待つと止まります。  
-weight_save/の下にw000000002184.txt という230MBほどのファイルが作られます。
-(2184、の数値は異なります)
+CPU版をダウンロードして、click_me.batを実行します。しばらくすると最新のネットワークの重みファイルをダウンロードして「self-play started」が表示されて棋譜の生成を開始します。すかさずCtrl + Cで停止させます。(signal 1 caught)が表示されて、しばらく待つと止まります。  
+weight_save/の下にw000000000066.txt という162MBほどのファイルが作られます。
+(66、の数値は異なります)
 
-aobazero-1.5-w64-cpu-only.zipに同梱されているaobaz.batを編集します。最後の1行が以下のようになっています。
+aobafuribisha-1.0-w64-cpu-only.zipに同梱されているaobaf.batを編集します。最後の1行が以下のようになっています。
 ```
-bin\aobaz -q -i -p 100 -w weight-save\w000000002184.txt
+bin\aobaf -q -i -p 100 -w weight-save\w000000000066.txt
 ```
-この2184の部分を実際にダウンロードしてきたファイル名に合わせて書き直し、保存します。
-将棋所にaobaz.batをエンジンとして登録します。  
+この66の部分を実際にダウンロードしてきたファイル名に合わせて書き直し、保存します。
+将棋所にaobaf.batをエンジンとして登録します。  
 "-p 100"の100を増やすと強くなりますが、思考時間が長くなります。
 CPU版は100で5秒ほどかかります。GPU版は4000で3秒ほどかかります(GPUの性能に依存します)。
 
-将棋所はusiエンジンを動作させる将棋用のGUIです。こちらで入手できます。
+将棋所はusiエンジンを動作させる将棋用のGUIです。こちらで入手できます。  
 将棋所のページ
 <http://shogidokoro.starfree.jp/>
 
 # ShogiGUIで遊んでみたい
-AobaZeroはShogiGUIでも動作しますがengineに送られてくる局面が初期局面からの手順(position startpos moves ...)ではなく、
-現在局面のみ(position sfen ...)なので、過去7局面をNNの入力に必要とするAobaZeroの本来の実力は出せません。
+Aoba振り飛車はShogiGUIでも動作します。「ツール(T)」「オプション(O)」で「棋譜解析、検討モードで指し手をすべて送る」にチェックを入れて下さい。  
+また2枚落ちを検討する場合、可能ならば2枚落ちの初期局面からの手順を含む棋譜で検討してください。  
+これはAoba振り飛車は0手目の局面でこの棋譜が、香落ち、角落ち、飛落ち、2枚、4枚、6枚、平手かを判断しているためです。これ以外は平手として扱われます。  
+
+チェックがない状態だと現在局面のみ(position sfen ... で move なし)なので、現在の手合い、過去5局面をNNの入力に必要とするAoba振り飛車の本来の実力が出せません。
 
 ShogiGUIのページ
 <http://shogigui.siganus.com/>
 
-# AobaZeroの紹介ページ
+# ShogiHomeで遊んでみたい
+
+ShogiHome(旧ElectronShogi)のページ
+<https://sunfish-shogi.github.io/electron-shogi/>
+
+# コンパイルの仕方
+[こちら](compile.txt)をご覧ください。
+
+# Aoba振り飛車の紹介ページ
 今までに作成した棋譜や重み、棋譜のサンプルなどを公開しています。  
-<http://www.yss-aya.com/aobazero/>
+<http://www.yss-aya.com/furibisha/>
 
 # License
-usiエンジンであるaobazはGPL v3です。それ以外はpublic domainです。  
-詳しくはaobazero-1.0.tar.gz内のlicensesをご覧ください。
+usiエンジンであるaobakはGPL v3です。それ以外はpublic domainです。  
+[短めのライセンス](license.txt)  
+詳しくは aobafuribisha-1.0.tar.gz 内の licenses をご覧ください。
 
 # Link
+ - [AobaZero](https://github.com/kobanium/aobazero)
+ - [Aoba駒落ち](https://github.com/kobanium/komaochi)
  - [Leela Zero (Go)](https://github.com/leela-zero/leela-zero)
  - [LCZero (Chess)](https://github.com/LeelaChessZero/lczero)
 
-# 参考文献
- - D. Silver, et al. (2017a). Mastering the game of Go without human knowledge, *Nature*, **550**, 354-359.
- - D. Silver, et al. (2017b).  Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm, arXiv:1712.01815.
- - D. Silver, et al. (2018). A general reinforcement learning algorithm that masters chess, shogi, and Go through self-play, *Science*, **362**, 1140-1144 ([a preprint version is avairable online](https://deepmind.com/research/publications/general-reinforcement-learning-algorithm-masters-chess-shogi-and-go-through-self-play)).

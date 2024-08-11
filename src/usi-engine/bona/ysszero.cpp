@@ -54,6 +54,7 @@ bool fDiffRootVisit = false;
 bool fSkipOneReply  = true;		// 王手を逃げる手が1手の局面は評価せずに木を降りる
 bool fSkipKingCheck = false;	// 王手がかかってる局面では評価せずに木を降りる
 bool fRawValuePolicy = true;
+bool fFuriShitei = false;
  
 int nLimitUctLoop = 100;
 double dLimitSec = 0;
@@ -2172,6 +2173,7 @@ void init_yss_zero()
 	fDone = 1;
 
 	if ( is_process_batch() == false ) init_seqence_hash();
+	if ( is_selfplay() == false && fFuriShitei == false ) set_rand_FuriPos();
 
 	std::random_device rd;
 	init_rnd521( (int)time(NULL)+getpid_YSS() + rd() );		// 起動ごとに異なる乱数列を生成
@@ -2305,6 +2307,7 @@ int getCmdLineParam(int argc, char *argv[])
 		if ( strstr(p,"-fs") ) {	// "-fs 001000000" 先手3間飛車
 			for (int i=0; i<9; i++) nFuriPos[i+0] = (q[i]=='1');
 			PRT("fs=%s\n",q);
+			fFuriShitei = true;
 			continue;
 		}
 		if ( strstr(p,"-fg") ) {	// "-fg 000001000" 後手4間飛車
@@ -2315,6 +2318,7 @@ int getCmdLineParam(int argc, char *argv[])
 				if ( i==8 ) PRT(":");
 			}
 			PRT("\n");
+			fFuriShitei = true;
 			continue;
 		}
 
@@ -2580,6 +2584,33 @@ bool is_selfplay()
 	return false;
 }
 
+// 自己対戦以外で未設定の場合は乱数で
+void set_rand_FuriPos() {
+	int rp[9] = { 100,100,100,100,100,50,50,1,100 };	// 居飛車は基本指さない。袖飛車、右4間も少な目に
+	int sum = 0;
+	for (int i=0;i<9;i++) sum += rp[i];
+	if ( sum <= 0 ) DEBUG_PRT("");
+
+	unsigned int r = rand_m521();
+	int ri = (r % sum) + 1;
+	int i,s = 0;
+	for (i=0; i<9; i++) {
+		s += rp[i];
+		if ( s >= ri ) break;
+	}
+	if ( i==9 ) DEBUG_PRT("not found ri=%d,sum=%d", ri,sum);
+
+	for (int j=0; j<9; j++) nFuriPos[j+0] = (j==i);
+	for (int j=0; j<9; j++) nFuriPos[j+9] = (j==8-i);
+
+	PRT("random nFuriPos=");
+	for (int i=0; i<18; i++) {
+		PRT("%d",nFuriPos[i]);
+		if ( i==8 ) PRT(":");
+	}
+	PRT("\n");
+}
+
 void usi_newgame(tree_t * restrict ptree)
 {
 	usi_newgames++;
@@ -2595,6 +2626,8 @@ void usi_newgame(tree_t * restrict ptree)
 			usi_posi( ptree, &lasts );
 			make_balanced_opening(ptree, root_turn, 1);
 		}
+	} else {
+		if ( fFuriShitei == false ) set_rand_FuriPos();
 	}
 }
 

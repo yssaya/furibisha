@@ -123,6 +123,7 @@ void clear_opening_hash();
 void make_balanced_opening(tree_t * restrict ptree, int sideToMove, int ply);
 HASH_SHOGI* HashShogiReadLock(tree_t * restrict ptree, int sideToMove);
 uint64 get_marge_hash(tree_t * restrict ptree, int sideToMove);
+void set_rand_FuriPos();
 
 // yss_net.cpp
 void init_network();

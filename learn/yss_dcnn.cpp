@@ -2849,7 +2849,7 @@ const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-
 //const int ZDB_POS_MAX = ZERO_DB_SIZE * 1;	// AI book2
 
 int zdb_count = 0;
-int zdb_count_start = 900000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
+int zdb_count_start = 0;//1080000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
 uint64_t zero_kif_pos_num = 0;
 int zero_kif_games = 0;
 int zero_pos_over250;
@@ -2860,7 +2860,7 @@ int nGCT_files;	// 1つの selfplay_gct-00*.csa に入ってる棋譜数
 int gct_csa = 1;	// ファイル番号
 int sum_gct_loads = 0; // 1ファイルの全棋譜を読み込んだ後に加算される
 
-const int fReplayLearning = 0;	// すでに作られた棋譜からWindowをずらせて学習させる
+const int fReplayLearning = 1;	// すでに作られた棋譜からWindowをずらせて学習させる
 const int fWwwSample = 0;		// fReplayLearning も同時に1
 
 
@@ -4689,7 +4689,8 @@ int shogi::wait_and_get_new_kif(int next_weight_n)
 		sleep(sleep_sec);
 //		int ret = system("/home/yss/koma_syn/rsync_one.sh");
 //		int ret = system("/home/yss/tcp_backup/rsync_one.sh");
-		int ret = 0;
+		int ret = system("/home/yss/prg/furibisha/rsync_one.sh");
+//		int ret = 0;
 		PRT("ret=%d\n",ret);
 		// 新規に追加されたファイルを調べる
 		for (;;) {
@@ -5639,13 +5640,13 @@ void start_zero_train(int *p_argc, char ***p_argv )
 	const auto net      = solver->net();
 #if ( U8700==1 )
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/20240724/_iter_10000.caffemodel";      // w1
-	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_450000.caffemodel";
+	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_60000.caffemodel";
 #else
 //	const char sNet[] = "/home/yss/shogi/learn/snapshots/20210604/_iter_10000.caffemodel";	// w0001
 //	const char sNet[] = "/home/yss/shogi/learn/20231230_233235_256x20b_mb256_Swish_from_63080k_from_20231225_185612/_iter_800000.caffemodel";
 #endif
 
-	int next_weight_number = 95;	// 現在の最新の番号 +1
+	int next_weight_number = 114;	// 現在の最新の番号 +1
 
 	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
 //	load_aoba_txt_weight( net, "/home/yss/w000000000689.txt" );	// 既存のw*.txtを読み込む。*.caffemodelを何か読み込んだ後に
@@ -5669,8 +5670,8 @@ goto wait_again;
 //		if ( iteration >= 100000*1 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration > 1000 ) solver_param.set_base_lr(0.01);
 	} else {
-		if ( 1 && iteration==0 && next_weight_number==95 ) {
-			add = 3100;	// 初回のみダミーで10000棋譜追加したことにする
+		if ( 1 && iteration==0 && next_weight_number==114 ) {
+			add = 3563;	// 初回のみダミーで10000棋譜追加したことにする
 		} else {
 			add = PS->wait_and_get_new_kif(next_weight_number);
 		}
@@ -5718,6 +5719,25 @@ goto wait_again;
 	int ret = sscanf(str,"%d %f",&furi_ignore_moves,&furi_base_mix);
 	if ( ret !=2 || furi_ignore_moves <= 0 || furi_base_mix < 0 ) DEBUG_PRT("");
 	fclose(fp);
+	if ( 1200000 < zdb_count && zdb_count <= 1240000 ) { furi_ignore_moves = 80; furi_base_mix = 0.5; }
+	if ( 1240000 < zdb_count && zdb_count <= 1280000 ) { furi_ignore_moves = 80; furi_base_mix = 0.6; }
+	if ( 1280000 < zdb_count && zdb_count <= 1320000 ) { furi_ignore_moves = 80; furi_base_mix = 0.7; }
+	if ( 1320000 < zdb_count && zdb_count <= 1360000 ) { furi_ignore_moves = 80; furi_base_mix = 0.8; }
+	if ( 1360000 < zdb_count && zdb_count <= 1400000 ) { furi_ignore_moves = 80; furi_base_mix = 0.9; }
+	if ( 1400000 < zdb_count && zdb_count <= 1440000 ) { furi_ignore_moves = 80; furi_base_mix = 1.0; }
+
+	if ( 1440000 < zdb_count && zdb_count <= 1500000 ) { furi_ignore_moves = 25; furi_base_mix = 0.3; }
+	if ( 1500000 < zdb_count && zdb_count <= 1540000 ) { furi_ignore_moves = 30; furi_base_mix = 0.3; }
+	if ( 1540000 < zdb_count && zdb_count <= 1580000 ) { furi_ignore_moves = 40; furi_base_mix = 0.3; }
+	if ( 1580000 < zdb_count && zdb_count <= 1620000 ) { furi_ignore_moves = 50; furi_base_mix = 0.3; }
+	if ( 1620000 < zdb_count && zdb_count <= 1660000 ) { furi_ignore_moves = 60; furi_base_mix = 0.3; }
+	if ( 1660000 < zdb_count && zdb_count <= 1700000 ) { furi_ignore_moves = 70; furi_base_mix = 0.3; }
+	if ( 1700000 < zdb_count && zdb_count <= 1740000 ) { furi_ignore_moves = 80; furi_base_mix = 0.3; }
+	if ( 1740000 < zdb_count && zdb_count <= 1780000 ) { furi_ignore_moves =100; furi_base_mix = 0.3; }
+	if ( 1780000 < zdb_count && zdb_count <= 1820000 ) { furi_ignore_moves =120; furi_base_mix = 0.3; }
+	if ( 1820000 < zdb_count && zdb_count <= 1860000 ) { furi_ignore_moves =150; furi_base_mix = 0.3; }
+	if ( 1860000 < zdb_count && zdb_count <= 1900000 ) { furi_ignore_moves =200; furi_base_mix = 0.3; }
+
 	PRT("reduce=%7.4f, add=%d,nLoop=%d,iter_weight_limit=%d/%d,furi_ignore_moves=%d,mix=%.3f\n",reduce,add,nLoop,iter_weight_limit,ITER_WEIGHT_BASE,furi_ignore_moves,furi_base_mix);
 
 //nLoop /= 4;
