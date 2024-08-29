@@ -144,7 +144,7 @@ extern unsigned char ailast_one[512];
 //#define BNZ_VER                 "100"	// 20240722 AobaFuribisha
 //#define BNZ_VER                 "101"	// 20240729 -fs,-fg option
 //#define BNZ_VER                 "102"	// 20240811 set_rand_FuriPos()
-#define BNZ_VER                 "103"	// 20240829 only root_turn, ranging rook flag is set. Oppoent is 111111111. Hash table is divided into two, Root Sente and Root Gote.
+#define BNZ_VER                 "103"	// 20240829 only in root_turn, ranging rook flag is set in MCTS. Oppoent is 111111111. Hash table is divided into two, Root Sente and Root Gote.
 
 #define BNZ_NAME                "AobaFuribisha"
 
