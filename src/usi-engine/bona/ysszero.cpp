@@ -79,7 +79,7 @@ int nFuriPos[18];
 
 
 std::vector <HASH_SHOGI> hash_shogi_table;
-const int HASH_SHOGI_TABLE_SIZE_MIN = 1024*4*4;
+const int HASH_SHOGI_TABLE_SIZE_MIN = 1024*4*4 *2;	// 先手、後手分けたので念のため2倍に
 int Hash_Shogi_Table_Size = HASH_SHOGI_TABLE_SIZE_MIN;
 int Hash_Shogi_Mask;
 int hash_shogi_use = 0;
@@ -414,7 +414,7 @@ uint64_t get_sequence_hash_drop(int moves, int to, int piece)
 
 void set_Hash_Shogi_Table_Size(int playouts)
 {
-	int n = playouts * 3;
+	int n = playouts * 3 * 2;	// 先手、後手別にしたので念のため2倍確保
 	
 	Hash_Shogi_Table_Size = HASH_SHOGI_TABLE_SIZE_MIN;
 	for (;;) {
@@ -440,9 +440,10 @@ void hash_shogi_table_reset()
 void hash_shogi_table_clear()
 {
 	Hash_Shogi_Mask       = Hash_Shogi_Table_Size - 1;
+	Hash_Shogi_Mask       &= Hash_Shogi_Mask - 1;	// 最下位bitでRoot先手番とRoot後手番に分ける
 	HASH_ALLOC_SIZE size = sizeof(HASH_SHOGI) * Hash_Shogi_Table_Size;
 	hash_shogi_table.resize(Hash_Shogi_Table_Size);	// reserve()だと全要素のコンストラクタが走らないのでダメ
-	PRT("HashShogi=%7d(%3dMB),sizeof(HASH_SHOGI)=%d,Hash_SHOGI_Mask=%d\n",Hash_Shogi_Table_Size,(int)(size/(1024*1024)),sizeof(HASH_SHOGI),Hash_Shogi_Mask);
+	PRT("HashShogi=%7d(%3dMB),sizeof(HASH_SHOGI)=%d,Hash_SHOGI_Mask=%d(%08x)\n",Hash_Shogi_Table_Size,(int)(size/(1024*1024)),sizeof(HASH_SHOGI),Hash_Shogi_Mask,Hash_Shogi_Mask);
 	hash_shogi_table_reset();
 }
 
@@ -463,7 +464,8 @@ void inti_rehash()
 
 int IsHashFull()
 {
-	if ( (uint64)hash_shogi_use >= (uint64)Hash_Shogi_Table_Size*90/100 ) {
+///	if ( (uint64)hash_shogi_use >= (uint64)Hash_Shogi_Table_Size*90/100 ) {
+	if ( (uint64)hash_shogi_use >= (uint64)Hash_Shogi_Table_Size*45/100 ) {
 		PRT("hash full! hash_shogi_use=%d,Hash_Shogi_Table_Size=%d\n",hash_shogi_use,Hash_Shogi_Table_Size);
 		return 1;
 	}
@@ -494,7 +496,8 @@ void hash_half_del(tree_t * restrict ptree, int sideToMove)
 	int max_sum = 0;
 	int del_games = max_sum * 5 / 10000;	// 0.05%以上。5%程度残る。メモリを最大限まで使い切ってる場合のみ。age_minus = 2 に。
 
-	const double limit_occupy = 50;		// 50%以上空くまで削除
+//	const double limit_occupy = 50;		// 50%以上空くまで削除
+	const double limit_occupy = 25;		// 25%以上空くまで削除
 	const int    limit_use    = (int)(limit_occupy*Hash_Shogi_Table_Size / 100);
 	int del_sum=0,age_minus = 4;
 	for (;age_minus>=0;age_minus--) {
@@ -527,42 +530,6 @@ void hash_half_del(tree_t * restrict ptree, int sideToMove)
 	}
 }
 
-#if 0
-template<class T>
-void atomic_lock(std::atomic<T> &f) {
-	T old = f.load();
-	while (!f.compare_exchange_weak(old, old + 1));
-}
-template<class T>
-void atomic_unlock(std::atomic<T> &f) {
-	f.store(0);
-}
-
-void ttas_lock(std::atomic<bool> &f)
-{
-	do {	// Test and Test-And-Set
-		while ( f.load() ) continue;
-	} while ( f.exchange(true) );
-}
-void ttas_sleep_lock(std::atomic<bool> &f)
-{
-	int min_delay = 100;
-	int max_delay = 1600;
-	int limit = min_delay;
-	do {
-		if ( f.load() ) {
-			int delay = rand_m521() % limit;
-			limit *= 2;
-			if ( limit > max_delay ) limit = max_delay;
-			std::this_thread::sleep_for(std::chrono::nanoseconds(delay));
-			continue;
-		}
-	} while ( f.exchange(true) );
-}
-void ttas_unlock(std::atomic<bool> &f)
-{
-	f.store(false);
-}
 
 
 HASH_SHOGI* HashShogiReadLock(tree_t * restrict ptree, int sideToMove)
@@ -575,62 +542,8 @@ research_empty_block:
 //	PRT("ReadLock hash=%016" PRIx64 "\n",hashcode64);
 
 	n = (int)hashcode64 & Hash_Shogi_Mask;
-	first_n = n;
-	const int TRY_MAX = 8;
+	n |= root_turn;	// Root先手番とRoot後手番でハッシュ表を分離
 
-	HASH_SHOGI *pt_first = NULL;
-
-	for (;;) {
-		HASH_SHOGI *pt = &hash_shogi_table[n];
-
-//		Lock(pt->entry_lock);		// Lockをかけっぱなしにするように
-		ttas_sleep_lock(pt->lock);
-		if ( pt->deleted == 0 ) {
-			if ( hashcode64 == pt->hashcode64 && hash64pos == pt->hash64pos ) {
-				return pt;
-			}
-		} else {
-			if ( pt_first == NULL ) pt_first = pt;
-		}
-		ttas_unlock(pt->lock);
-//		UnLock(pt->entry_lock);
-
-		// 違う局面だった
-		if ( loop == REHASH_SHOGI ) break;	// 見つからず
-		if ( loop >= TRY_MAX && pt_first ) break;	// 妥協。TRY_MAX回探してなければ未登録扱い。
-		n = (rehash[loop++] + first_n ) & Hash_Shogi_Mask;
-	}
-	if ( pt_first ) {
-		// 検索中に既にpt_firstが使われてしまっていることもありうる。もしくは同時に同じ場所を選んでしまうケースも。
-		ttas_sleep_lock(pt_first->lock);
-//		Lock(pt_first->entry_lock);
-		if ( pt_first->deleted == 0 ) {	// 先に使われてしまった！
-//			UnLock(pt_first->entry_lock);
-			ttas_unlock(pt_first->lock);
-			goto research_empty_block;
-		}
-		ttas_unlock(pt_first->lock);
-		return pt_first;	// 最初にみつけた削除済みの場所を利用
-	}
-	int sum = 0;
-	for (int i=0;i<Hash_Shogi_Table_Size;i++) { sum = hash_shogi_table[i].deleted; PRT("%d",hash_shogi_table[i].deleted); }
-	PRT("\nno child hash Err loop=%d,hash_shogi_use=%d,first_n=%d,del_sum=%d(%.1f%%)\n",loop,hash_shogi_use,first_n,sum, 100.0*sum/Hash_Shogi_Table_Size); debug(); return NULL;
-}
-#endif
-
-
-
-
-HASH_SHOGI* HashShogiReadLock(tree_t * restrict ptree, int sideToMove)
-{
-research_empty_block:
-	int n,first_n,loop = 0;
-
-	uint64 hash64pos  = get_marge_hash(ptree, sideToMove);
-	uint64 hashcode64 = ptree->sequence_hash;
-//	PRT("ReadLock hash=%016" PRIx64 "\n",hashcode64);
-
-	n = (int)hashcode64 & Hash_Shogi_Mask;
 	first_n = n;
 	const int TRY_MAX = 8;
 
@@ -652,6 +565,7 @@ research_empty_block:
 		if ( loop == REHASH_SHOGI ) break;	// 見つからず
 		if ( loop >= TRY_MAX && pt_first ) break;	// 妥協。TRY_MAX回探してなければ未登録扱い。
 		n = (rehash[loop++] + first_n ) & Hash_Shogi_Mask;
+		n |= root_turn;
 	}
 //	{ static int count, loop_sum; count++; loop_sum+=loop; PRT("%d,",loop); if ( (count%100)==0 ) PRT("loop_ave=%.1f\n",(float)loop_sum/count); }
 	if ( pt_first ) {

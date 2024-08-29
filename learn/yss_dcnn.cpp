@@ -2830,10 +2830,10 @@ void free_zero_db_struct(ZERO_DB *p)
 
 }
 
-//const int ZERO_DB_SIZE = 267000000;	// AI_book2
-//const int ZERO_DB_SIZE = 20000000;	// gct001-075
 //const int ZERO_DB_SIZE = 10000;	// 100000,  500000
-const int ZERO_DB_SIZE = 100000;	// 100000,  500000
+//const int ZERO_DB_SIZE = 100000;	// 100000,  500000
+const int ZERO_DB_SIZE = 500000;
+//const int ZERO_DB_SIZE = 2000000;
 //const int ZERO_DB_SIZE = 310000;
 const int MAX_ZERO_MOVES = 513;	// 512手目を後手が指して詰んでなければ。513手目を先手が指せば無条件で引き分け。
 ZERO_DB zdb_one;
@@ -2849,7 +2849,7 @@ const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-
 //const int ZDB_POS_MAX = ZERO_DB_SIZE * 1;	// AI book2
 
 int zdb_count = 0;
-int zdb_count_start = 0;//1080000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
+int zdb_count_start = 5360000;//3400000;//4800000;//3480000;//2480000;//1770000;//1080000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
 uint64_t zero_kif_pos_num = 0;
 int zero_kif_games = 0;
 int zero_pos_over250;
@@ -2860,7 +2860,7 @@ int nGCT_files;	// 1つの selfplay_gct-00*.csa に入ってる棋譜数
 int gct_csa = 1;	// ファイル番号
 int sum_gct_loads = 0; // 1ファイルの全棋譜を読み込んだ後に加算される
 
-const int fReplayLearning = 1;	// すでに作られた棋譜からWindowをずらせて学習させる
+const int fReplayLearning = 0;	// すでに作られた棋譜からWindowをずらせて学習させる
 const int fWwwSample = 0;		// fReplayLearning も同時に1
 
 
@@ -3036,6 +3036,7 @@ int find_kif_from_archive(int search_n)
 #if ( U8700==1 )
 //	char dir_arch[] = "/home/yss/tcp_backup/archive/";
 	char dir_arch[] = "/home/yss/prg/furibisha/archive/";
+//	char dir_arch[] = "/home/yss/shogi/furibisha/archive/";
 #else
 //	char dir_arch[] = "/home/yss/tcp_backup/archive20201207/";
 	char dir_arch[] = "/home/yss/prg/furibisha/archive/";
@@ -3156,6 +3157,7 @@ int find_kif_from_pool(int search_n)
 //	char dir_pool[] = "/home/yss/koma_syn/pool";
 //	char dir_pool[] = "/home/yss/tcp_backup/pool";
 	char dir_pool[] = "/home/yss/prg/furibisha/pool";
+//	char dir_pool[] = "/home/yss/shogi/furibisha/pool";
 	char filename[TMP_BUF_LEN];
 	if ( USE_XZ ) {
 		sprintf(filename,"%s/no%012d.csa.xz",dir_pool,search_n);
@@ -4119,9 +4121,9 @@ kld = 1.0;	// ignore kld
 			sum_k += k;
 			sum_b += b;
 			sum_h += h;
-			PRT("%d:%5d(%9f),%7d,hope=%7d\n",i,k,(float)k/h,b,h);
+			PRT("%d:%6d(%9f),%7d,hope=%7d\n",i,k,(float)k/h,b,h);
 		}
-		PRT(" :%5d(%9f),%7d,hope=%7d\n",sum_k,(float)sum_k/sum_h,sum_b,sum_h);
+		PRT(" :%6d(%9f),%7d,hope=%7d\n",sum_k,(float)sum_k/sum_h,sum_b,sum_h);
 	}
 	PRT("furi_hope_recent:%d\n",zdb_count);
 	static int nGraph;
@@ -5640,13 +5642,18 @@ void start_zero_train(int *p_argc, char ***p_argv )
 	const auto net      = solver->net();
 #if ( U8700==1 )
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/20240724/_iter_10000.caffemodel";      // w1
-	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_60000.caffemodel";
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_60000.caffemodel";
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1080000.caffemodel";	// w221
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_720000.caffemodel";	// w293
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1000000.caffemodel";	// w393
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1340000.caffemodel";	// w527
+	const char sNet[] = "/home/yss/prg/furibisha/learn/ext_r39/_iter_410000.caffemodel";	// 20b0001_iter_410000.txt
 #else
 //	const char sNet[] = "/home/yss/shogi/learn/snapshots/20210604/_iter_10000.caffemodel";	// w0001
 //	const char sNet[] = "/home/yss/shogi/learn/20231230_233235_256x20b_mb256_Swish_from_63080k_from_20231225_185612/_iter_800000.caffemodel";
 #endif
 
-	int next_weight_number = 114;	// 現在の最新の番号 +1
+	int next_weight_number = 582;	// 現在の最新の番号 +1
 
 	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
 //	load_aoba_txt_weight( net, "/home/yss/w000000000689.txt" );	// 既存のw*.txtを読み込む。*.caffemodelを何か読み込んだ後に
@@ -5670,8 +5677,8 @@ goto wait_again;
 //		if ( iteration >= 100000*1 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration > 1000 ) solver_param.set_base_lr(0.01);
 	} else {
-		if ( 1 && iteration==0 && next_weight_number==114 ) {
-			add = 3563;	// 初回のみダミーで10000棋譜追加したことにする
+		if ( 1 && iteration==0 && next_weight_number==582 ) {
+			add = 578;	// 初回のみダミーで10000棋譜追加したことにする
 		} else {
 			add = PS->wait_and_get_new_kif(next_weight_number);
 		}
@@ -5745,7 +5752,7 @@ goto wait_again;
 //nLoop = (int)((float)nLoop * 0.701);
 	if ( GCT_SELF ) nLoop = 800000*1;
 //nLoop = (int)(((float)zero_kif_pos_num / MINI_BATCH) * 50 / 100.0);	// 50%の局面を学習 //10*1; 
-//nLoop = 0;
+//nLoop = 10000000;
 
 	PRT("nLoop=%d,add=%d,add_mul=%.3f,MINI_BATCH=%d,kDataSize=%d,remainder=%d,iteration=%d(%d/%d),rand=%lu/%lu(%lf),",nLoop,add,add_mul,MINI_BATCH,kDataSize,remainder,iteration,iter_weight,iter_weight_limit, rand_try,rand_batch,(double)rand_try/(double)(rand_batch+0.00001));
 	PRT("stree_total()=%lld,zero_kif_pos_num=%lu\n",stree_total(),zero_kif_pos_num);

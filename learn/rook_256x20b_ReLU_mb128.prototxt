@@ -79,6 +79,8 @@ layer {
   bottom: "dummy_label3"
   bottom: "dummy_label4"
   bottom: "dummy_label5"
+  bottom: "label_rook"
+  bottom: "label_rook_ok"
 }
 
 
@@ -1448,83 +1450,83 @@ layer {
 }
 
 
-# ranging rook success head
-layer {
-  name: "conv1_rook_1x1_4"  # 9*9*4 = 324 > 256
-  type: "Convolution"
-  bottom: "relu39"
-  top: "conv1_rook"
-  convolution_param {
-    num_output: 4
-    kernel_size: 1
-    pad: 0
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" }
-  }
-}
-layer {
-  name:"bn1_rook"
-  type:"BatchNorm"
-  bottom:"conv1_rook"
-  top:"bn1_rook"
-}
-layer {
-  name:"relu1_rook"
-  type:"ReLU"
-  bottom:"bn1_rook"
-  top:"relu1_rook"
-}
+# ranging rook success head. 192x10b result shows this head was useless. comment out.
+#layer {
+#  name: "conv1_rook_1x1_4"  # 9*9*4 = 324 > 256
+#  type: "Convolution"
+#  bottom: "relu39"
+#  top: "conv1_rook"
+#  convolution_param {
+#    num_output: 4
+#    kernel_size: 1
+#    pad: 0
+#    weight_filler { type: "msra" }
+#    bias_filler { type: "constant" }
+#  }
+#}
+#layer {
+#  name:"bn1_rook"
+#  type:"BatchNorm"
+#  bottom:"conv1_rook"
+#  top:"bn1_rook"
+#}
+#layer {
+#  name:"relu1_rook"
+#  type:"ReLU"
+#  bottom:"bn1_rook"
+#  top:"relu1_rook"
+#}
 
-layer {
-  name: "ip2_rook"
-  type: "InnerProduct"
-  inner_product_param {
-    num_output: 256
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" }
-  }
-  bottom: "relu1_rook"
-  top: "ip2_rook"
-}
-layer {
-  name: "relu2_rook"
-  type: "ReLU"
-  bottom: "ip2_rook"
-  top: "relu2_rook"
-}
-layer {
-  name: "ip3_rook"
-  type: "InnerProduct"
-  inner_product_param {
-    num_output: 1
-    weight_filler { type: "xavier" }
-    bias_filler { type: "constant" }
-  }
-  bottom: "relu2_rook"
-  top: "ip3_rook"
-}
-layer {
-  name: "tanh_rook"
-  type: "TanH"
-  bottom: "ip3_rook"
-  top: "tanh_rook"
-}
-layer {
-  name: "rook_ok_mult"
-  type: "Eltwise"
-  bottom: "tanh_rook"
-  bottom: "label_rook_ok"
-  top: "rook_ok_mult"
-  eltwise_param {
-    operation: PROD
-  }
-}
-layer {
-  name: "loss_rook"
-  type: "EuclideanLoss"
-  bottom: "rook_ok_mult"
-  bottom: "label_rook"
-  top: "loss_rook"
-  loss_weight: 2  # probably smaller is better
-}
+#layer {
+#  name: "ip2_rook"
+#  type: "InnerProduct"
+#  inner_product_param {
+#    num_output: 256
+#    weight_filler { type: "msra" }
+#    bias_filler { type: "constant" }
+#  }
+#  bottom: "relu1_rook"
+#  top: "ip2_rook"
+#}
+#layer {
+#  name: "relu2_rook"
+#  type: "ReLU"
+#  bottom: "ip2_rook"
+#  top: "relu2_rook"
+#}
+#layer {
+#  name: "ip3_rook"
+#  type: "InnerProduct"
+#  inner_product_param {
+#    num_output: 1
+#    weight_filler { type: "xavier" }
+#    bias_filler { type: "constant" }
+#  }
+#  bottom: "relu2_rook"
+#  top: "ip3_rook"
+#}
+#layer {
+#  name: "tanh_rook"
+#  type: "TanH"
+#  bottom: "ip3_rook"
+#  top: "tanh_rook"
+#}
+#layer {
+#  name: "rook_ok_mult"
+#  type: "Eltwise"
+#  bottom: "tanh_rook"
+#  bottom: "label_rook_ok"
+#  top: "rook_ok_mult"
+#  eltwise_param {
+#    operation: PROD
+#  }
+#}
+#layer {
+#  name: "loss_rook"
+#  type: "EuclideanLoss"
+#  bottom: "rook_ok_mult"
+#  bottom: "label_rook"
+#  top: "loss_rook"
+#  loss_weight: 2  # probably smaller is better
+#}
 

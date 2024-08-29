@@ -480,6 +480,7 @@ void set_dcnn_channels(tree_t * restrict ptree, int sideToMove, int ply, float *
 #endif
 	const int STANDARDIZATION = 1;
 
+//	PRT("root_turn=%d,ply=%d,t=%d,flip=%d\n",root_turn,ply,t,flip);
 //	if ( sideToMove != (t&1) ) { PRT("sideToMove Err\n"); debug(); }
 	if ( ply < 1 ) DEBUG_PRT("ply=%d Err.\n",ply);
 	
@@ -701,6 +702,8 @@ void set_dcnn_channels(tree_t * restrict ptree, int sideToMove, int ply, float *
 	for (int i=0;i<9;i++) {
 		int f = nFuriPos[i];	// 先手四間飛車、後手三間飛車の場合は  000100000:000000100  先手、後手とも左から見た絶対座標
 		if ( flip ) f = nFuriPos[17-i];
+
+		if ( root_turn != flip ) f = 1;		// Root手番と違う場合は常に1でどこに振るか不明、とする
 		if ( f ) {
 			for (y=0;y<B_SIZE;y++) for (x=0;x<B_SIZE;x++) {
 				set_dcnn_data( data, base + i, y,x);
