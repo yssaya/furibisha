@@ -10,8 +10,8 @@ AIは振り飛車の新しい指し方を発見できるでしょうか？1間�
 与えています。詳しくは[こちらを](http://www.yss-aya.com/furibisha/furi.html)。
 
 集めた棋譜や棋力のグラフ、棋譜のサンプルなどは[こちら](http://www.yss-aya.com/furibisha/)で公開しています。
-「Aoba振り飛車」は以下のプロジェクトの後継でもあります。
-[AobaZero](http://www.yss-aya.com/aobazero/)
+「Aoba振り飛車」は以下のプロジェクトの後継でもあります。  
+[AobaZero](http://www.yss-aya.com/aobazero/)  
 [Aoba駒落ち](http://www.yss-aya.com/komaochi/)
 
 GPUがあれば、より高速に棋譜を生成できます。  
@@ -22,24 +22,20 @@ CPUだと10倍から100倍遅くなりますが、将棋をプレイして楽し
 
 CPUだけのマシンは
 ```
-aobafuribisha-1.0-w64-cpu-only.zip
+aobafuribisha-103-w64-cpu-only.zip
 ```
 GPUがついたマシンは
 ```
-aobafuribisha-1.0-w64-opencl.zip
+aobafuribisha-103-w64-opencl.zip
 ```
 をダウンロード、展開して、中のclick_me.batを実行してください。  
 GPUの種類によっては autousi.cfg の  
 ```
-Device        O-1:7:21W
+Device        O-1:3:7W 
 ```
 を変更することでより高速で動作する場合があります。[autousi.cfg](autousi.cfg) の他のサンプルをご参考下さい。ただWindows版ではプロセス数を36以上に増やすと起動に失敗することがあります。  
 
-Linuxの方は
-```
-furibisha-1.0.tar.gz
-```
-を展開してmakeしてから
+Linuxの方は[readme.txt](readme.txt)の手順でコンパイルしてから
 ```
 ./bin/autousi
 ```
@@ -47,10 +43,10 @@ furibisha-1.0.tar.gz
 
 # 将棋所で遊んでみたい
 CPU版をダウンロードして、click_me.batを実行します。しばらくすると最新のネットワークの重みファイルをダウンロードして「self-play started」が表示されて棋譜の生成を開始します。すかさずCtrl + Cで停止させます。(signal 1 caught)が表示されて、しばらく待つと止まります。  
-weight_save/の下にw000000000066.txt という162MBほどのファイルが作られます。
+weight_save/の下にw000000000066.txt という20MBほどのファイルが作られます。
 (66、の数値は異なります)
 
-aobafuribisha-1.0-w64-cpu-only.zipに同梱されているaobaf.batを編集します。最後の1行が以下のようになっています。
+aobafuribisha-103-w64-cpu-only.zipに同梱されているaobaf.batを編集します。最後の1行が以下のようになっています。
 ```
 bin\aobaf -q -i -p 100 -w weight-save\w000000000066.txt
 ```
@@ -60,22 +56,18 @@ bin\aobaf -q -i -p 100 -w weight-save\w000000000066.txt
 CPU版は100で5秒ほどかかります。GPU版は4000で3秒ほどかかります(GPUの性能に依存します)。
 
 将棋所はusiエンジンを動作させる将棋用のGUIです。こちらで入手できます。  
-将棋所のページ
+将棋所のページ  
 <http://shogidokoro.starfree.jp/>
 
 # ShogiGUIで遊んでみたい
 Aoba振り飛車はShogiGUIでも動作します。「ツール(T)」「オプション(O)」で「棋譜解析、検討モードで指し手をすべて送る」にチェックを入れて下さい。  
-また2枚落ちを検討する場合、可能ならば2枚落ちの初期局面からの手順を含む棋譜で検討してください。  
-これはAoba振り飛車は0手目の局面でこの棋譜が、香落ち、角落ち、飛落ち、2枚、4枚、6枚、平手かを判断しているためです。これ以外は平手として扱われます。  
+チェックがない状態だと現在局面のみ(position sfen ... で move なし)なので、千日手の打開が若干甘くなります。
 
-チェックがない状態だと現在局面のみ(position sfen ... で move なし)なので、現在の手合い、過去5局面をNNの入力に必要とするAoba振り飛車の本来の実力が出せません。
-
-ShogiGUIのページ
+ShogiGUIのページ  
 <http://shogigui.siganus.com/>
 
 # ShogiHomeで遊んでみたい
-
-ShogiHome(旧ElectronShogi)のページ
+ShogiHome(旧ElectronShogi)のページ  
 <https://sunfish-shogi.github.io/electron-shogi/>
 
 # コンパイルの仕方
@@ -88,11 +80,11 @@ ShogiHome(旧ElectronShogi)のページ
 # License
 usiエンジンであるaobakはGPL v3です。それ以外はpublic domainです。  
 [短めのライセンス](license.txt)  
-詳しくは aobafuribisha-1.0.tar.gz 内の licenses をご覧ください。
+詳しくは[こちら](https://github.com/yssaya/furibisha/tree/master/licenses)をご覧ください。
 
 # Link
  - [AobaZero](https://github.com/kobanium/aobazero)
- - [Aoba駒落ち](https://github.com/kobanium/komaochi)
+ - [Aoba駒落ち](https://github.com/yssaya/komaochi)
  - [Leela Zero (Go)](https://github.com/leela-zero/leela-zero)
  - [LCZero (Chess)](https://github.com/LeelaChessZero/lczero)
 
