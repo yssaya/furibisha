@@ -326,9 +326,9 @@ public:
     _node.clear(_handicap);
     _flag_playing   = true;
     _flag_thinking  = false;
-    if ( (resign_count++ % 10) == 0 ) _flag_do_resign = false;
-    else                              _flag_do_resign = true;
-//  _flag_do_resign = false;  // 20210610
+//    if ( (resign_count++ % 10) == 0 ) _flag_do_resign = false;
+//    else                              _flag_do_resign = true;
+    _flag_do_resign = false;  // 20240908
 
     const char *str_turn[2] = { "+", "-" };
     char buf[256*4];

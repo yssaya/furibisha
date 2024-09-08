@@ -2849,7 +2849,7 @@ const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-
 //const int ZDB_POS_MAX = ZERO_DB_SIZE * 1;	// AI book2
 
 int zdb_count = 0;
-int zdb_count_start = 5360000;//3400000;//4800000;//3480000;//2480000;//1770000;//1080000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
+int zdb_count_start = 7070000;//5360000;//3400000;//4800000;//3480000;//2480000;//1770000;//1080000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
 uint64_t zero_kif_pos_num = 0;
 int zero_kif_games = 0;
 int zero_pos_over250;
@@ -3624,6 +3624,7 @@ void update_pZDBsum()
 	int furi_win[9][9][4] = {0};
 	int furi_recent_win[9][9][4] = {0};
 	static float furi_resent_graph[50][9] = {0};
+	int furi_moves_sum[9][9] = {0};
 #endif
 
 	PS->set_keep_pos();
@@ -3934,6 +3935,8 @@ kld = 1.0;	// ignore kld
 		if ( furi_b[0] == -1 || furi_b[1] == -1 ) DEBUG_PRT("");
 		furi_win[furi_b[0]][furi_b[1]][p->result]++;
 		if ( p->index >= zdb_count - 10000 ) furi_recent_win[furi_b[0]][furi_b[1]][p->result]++;
+
+		furi_moves_sum[furi_b[0]][furi_b[1]] += p->moves;
 #endif
 
 	}
@@ -4151,6 +4154,15 @@ kld = 1.0;	// ignore kld
 		}
 	}
 	if ( nGraph < 50-1 ) nGraph++;
+
+	PRT("furi_moves:%d\n",zdb_count);
+	for (int y=0;y<9;y++) for (int x=0;x<9;x++) {
+		int *p = furi_win[y][x];
+		int s = *(p+0) + *(p+1) + *(p+2);
+		if ( s==0 ) s = 1;
+		PRT("%7.2f",(float)furi_moves_sum[y][x]/s);
+		if (x==8) PRT("\n");
+	}
 
 #endif
 
@@ -5399,7 +5411,7 @@ void convert_caffemodel(int iteration, int weight_number)
 	int ret = system("bash /home/yss/prg/furibisha/learn/extract/aoba.sh");
 
 	ret = system("sleep 10");
-//	ret = system("/home/yss/tcp_backup/rsync_weight_only.sh");
+	ret = system("/home/yss/prg/furibisha/rsync_weight_only.sh");
 	(void)ret;
 }
 
@@ -5647,13 +5659,14 @@ void start_zero_train(int *p_argc, char ***p_argv )
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_720000.caffemodel";	// w293
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1000000.caffemodel";	// w393
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1340000.caffemodel";	// w527
-	const char sNet[] = "/home/yss/prg/furibisha/learn/ext_r39/_iter_410000.caffemodel";	// 20b0001_iter_410000.txt
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/ext_r39/_iter_410000.caffemodel";	// 20b0001_iter_410000.txt
+	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1710000.caffemodel";	// w752
 #else
 //	const char sNet[] = "/home/yss/shogi/learn/snapshots/20210604/_iter_10000.caffemodel";	// w0001
 //	const char sNet[] = "/home/yss/shogi/learn/20231230_233235_256x20b_mb256_Swish_from_63080k_from_20231225_185612/_iter_800000.caffemodel";
 #endif
 
-	int next_weight_number = 582;	// 現在の最新の番号 +1
+	int next_weight_number = 753;	// 現在の最新の番号 +1
 
 	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
 //	load_aoba_txt_weight( net, "/home/yss/w000000000689.txt" );	// 既存のw*.txtを読み込む。*.caffemodelを何か読み込んだ後に
@@ -5677,8 +5690,8 @@ goto wait_again;
 //		if ( iteration >= 100000*1 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration > 1000 ) solver_param.set_base_lr(0.01);
 	} else {
-		if ( 1 && iteration==0 && next_weight_number==582 ) {
-			add = 578;	// 初回のみダミーで10000棋譜追加したことにする
+		if ( 1 && iteration==0 && next_weight_number==753 ) {
+			add = 152;	// 初回のみダミーで10000棋譜追加したことにする
 		} else {
 			add = PS->wait_and_get_new_kif(next_weight_number);
 		}

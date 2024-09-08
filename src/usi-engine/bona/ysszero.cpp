@@ -1129,6 +1129,7 @@ int uct_search_start(tree_t * restrict ptree, int sideToMove, int ply, char *buf
 			select_rand_prob = s;
 		}
 	}
+	PRT("nFuri=%2d,rate=%d,is_weaken=%d,softmax_temp=%lf,select_rand_prob=%lf\n",nFuri,rate,is_weaken,softmax_temp,select_rand_prob);
 
 	// selects moves proportionally to their visit count
 	if ( (is_opening_random || is_weaken) && sum_games > 0 && sort_n > 0 ) {
