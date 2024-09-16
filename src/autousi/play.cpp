@@ -241,30 +241,32 @@ public:
     argv[argc++] = opt_r;
     argv[argc++] = opt_r_value;
 
-#if 1	// normal
+#if 0	// normal
     char opt_p[]       = "-p";
     char opt_p_value[] = "800";
     argv[argc++] = opt_p;
     argv[argc++] = opt_p_value;
 #else
     char opt_p[]       = "-p";
-//  char opt_p_value[] = "3200";
+    char opt_p_value[] = "3200";
 //  char opt_p_value[] = "6400";
-    char opt_p_value[] = "12800";
+//  char opt_p_value[] = "12800";
     argv[argc++] = opt_p;
     argv[argc++] = opt_p_value;
 
     char opt_kld[]       = "-kldgain";
 //  char opt_kld_value[] = "0.0000013";
+    char opt_kld_value[] = "0.000013";
 //  char opt_kld_value[] = "0.000006";
 //  char opt_kld_value[] = "0.000005";
 //  char opt_kld_value[] = "0.00000075";
-    char opt_kld_value[] = "0.0000004";
+//  char opt_kld_value[] = "0.0000004";
     argv[argc++] = opt_kld;
     argv[argc++] = opt_kld_value;
 
     char opt_kld_i[]       = "-kldinterval";
-    char opt_kld_i_value[] = "400";     // check kldgain each 400 playouts
+    char opt_kld_i_value[] = "100";  // check kldgain each 100 playouts. base 800/8 = 100, 800*4 = 3200
+//  char opt_kld_i_value[] = "400";  // check kldgain each 400 playouts
     argv[argc++] = opt_kld_i;
     argv[argc++] = opt_kld_i_value;
 #endif

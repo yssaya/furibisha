@@ -1335,6 +1335,49 @@ PI82HI22KA11KY91KY21KE81KE  6枚落ち
 	return 1;
 }
 
+int get_furi_bit_to_x(int bit)
+{
+	// 100000000 ... x = 0
+	// 010000000 ... x = 1   後手は居飛車
+	// 001000000 ... x = 2
+	// 000100000 ... x = 3
+	// 000010000 ... x = 4
+	// 000001000 ... x = 5
+	// 000000100 ... x = 6
+	// 000000010 ... x = 7   先手は居飛車
+	// 000000001 ... x = 8
+	int b = bit;
+	for (int x=0;x<9;x++) {
+		if (b & 1) return 8-x;
+		b >>= 1;
+	}
+	DEBUG_PRT("");
+	return 0;
+}
+
+float get_ave_furi_hope_bit(int bit, float array[], int t)
+{
+	int sum = 0;
+	float sum_array = 0;
+	int b = bit;
+	for (int x=0;x<9;x++) {
+		if (b & 1) {
+			float f;
+			if ( t&1 ) {
+				f = array[8-(8-x)];
+			} else {
+				f = array[8-x];
+			}
+			sum_array += f;
+			sum++;
+		}
+		b >>= 1;
+	}
+	if ( sum==0 ) DEBUG_PRT("");
+	return sum_array/sum;
+}
+
+
 // Shotest形式の棋譜を読み込む
 void shogi::LoadShotest(void)
 {

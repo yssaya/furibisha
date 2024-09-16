@@ -145,7 +145,8 @@ extern unsigned char ailast_one[512];
 //#define BNZ_VER                 "101"	// 20240729 -fs,-fg option
 //#define BNZ_VER                 "102"	// 20240811 set_rand_FuriPos()
 //#define BNZ_VER                 "103"	// 20240829 only in root_turn, ranging rook flag is set in MCTS. Oppoent is 111111111. Hash table is divided into two, Root Sente and Root Gote.
-#define BNZ_VER                 "104"	// 20240908 never resign in autousi
+//#define BNZ_VER                 "104"	// 20240908 never resign in autousi
+#define BNZ_VER                 "105"	// 20240916 kldgain, -p 3200 -kldgain 0.000013 -kldinterval 100. it is same average playouts around 744/move.
 
 #define BNZ_NAME                "AobaFuribisha"
 

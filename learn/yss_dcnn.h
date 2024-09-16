@@ -83,4 +83,7 @@ const unsigned short NO_ROOT_SCORE = 10001;
 void free_zero_db_struct(ZERO_DB *p);
 void start_zero_train(int *, char ***);
 
+int get_furi_bit_to_x(int bit);
+float get_ave_furi_hope_bit(int bit, float array[], int t);
+
 #endif	//]] INCLUDE__GUARD

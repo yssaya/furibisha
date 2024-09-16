@@ -2849,7 +2849,7 @@ const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-
 //const int ZDB_POS_MAX = ZERO_DB_SIZE * 1;	// AI book2
 
 int zdb_count = 0;
-int zdb_count_start = 7070000;//5360000;//3400000;//4800000;//3480000;//2480000;//1770000;//1080000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
+int zdb_count_start = 11680000;//11160000;//9860000;//7070000;//5360000;//3400000;//4800000;//3480000;//2480000;//1770000;//1080000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
 uint64_t zero_kif_pos_num = 0;
 int zero_kif_games = 0;
 int zero_pos_over250;
@@ -3621,6 +3621,14 @@ void update_pZDBsum()
 	int furi_recent_hope_count[2][9] = {0};
 	int furi_recent_count[2][9] = {0};
 	int furi_recent_ok[2][9] = {0};
+
+	int furi_only_hope_count[2][9] = {0};
+	int furi_only_count[2][9] = {0};
+	int furi_only_ok[2][9] = {0};
+	int furi_only_recent_hope_count[2][9] = {0};
+	int furi_only_recent_count[2][9] = {0};
+	int furi_only_recent_ok[2][9] = {0};
+
 	int furi_win[9][9][4] = {0};
 	int furi_recent_win[9][9][4] = {0};
 	static float furi_resent_graph[50][9] = {0};
@@ -3913,6 +3921,17 @@ kld = 1.0;	// ignore kld
 		for (int k=0;k<2;k++) {
 			int hope = p->furi_hope_bit[k];
 			int bit  = p->furi_bit[k];
+			int h2 = hope;
+			int s = 0;
+			for (int j=0;j<9;j++) {
+				int h = h2 & 1;
+				h2 >>= 1;
+				s += h;
+			}
+			int only = 0;
+			if ( s==1 ) only = 1;
+			if ( s==0 ) DEBUG_PRT("");
+
 			for (int j=0;j<9;j++) {
 				int h = hope & 1;
 				hope >>= 1;
@@ -3925,10 +3944,20 @@ kld = 1.0;	// ignore kld
 				bit >>= 1;
 				furi_count[k][8-j] += b;
 				furi_ok[k][8-j] += (h&b);
+				if ( only ) {
+					furi_only_hope_count[k][8-j] += h;
+					furi_only_count[k][8-j] += b;
+					furi_only_ok[k][8-j] += (h&b);
+				}
 				if ( p->index >= zdb_count - 10000 ) {
 					furi_recent_hope_count[k][8-j] += h;
 					furi_recent_count[k][8-j] += b;
 					furi_recent_ok[k][8-j] += (h&b);
+					if ( only ) {
+						furi_only_recent_hope_count[k][8-j] += h;
+						furi_only_recent_count[k][8-j] += b;
+						furi_only_recent_ok[k][8-j] += (h&b);
+					}
 				}
 			}
 		}
@@ -4145,6 +4174,40 @@ kld = 1.0;	// ignore kld
 		}
 		PRT(" :%5d(%9f),%7d,hope=%7d\n",sum_k,(float)sum_k/sum_h,sum_b,sum_h);
 	}
+
+	PRT("furi_only_hope:%d\n",zdb_count);
+	for (int i=0;i<2;i++) {
+		int sum_k=0,sum_h=0,sum_b=0;
+		for (int j=0;j<9;j++) {
+			int h = furi_only_hope_count[i][j];
+			int b = furi_only_count[i][j];
+			int k = furi_only_ok[i][j];
+			if ( h==0 ) h = 1;
+			sum_k += k;
+			sum_b += b;
+			sum_h += h;
+			PRT("%d:%6d(%9f),%7d,hope=%7d\n",i,k,(float)k/h,b,h);
+		}
+		PRT(" :%6d(%9f),%7d,hope=%7d\n",sum_k,(float)sum_k/sum_h,sum_b,sum_h);
+	}
+	PRT("furi_only_hope_recent:%d\n",zdb_count);
+//	static int nGraph;
+	for (int i=0;i<2;i++) {
+		int sum_k=0,sum_h=0,sum_b=0;
+		for (int j=0;j<9;j++) {
+			int h = furi_only_recent_hope_count[i][j];
+			int b = furi_only_recent_count[i][j];
+			int k = furi_only_recent_ok[i][j];
+			if ( h==0 ) h = 1;
+			sum_k += k;
+			sum_b += b;
+			sum_h += h;
+			PRT("%d:%5d(%9f),%7d,hope=%7d\n",i,k,(float)k/h,b,h);
+//			if ( i==0 ) furi_resent_graph[nGraph][j] = (float)k/h;
+		}
+		PRT(" :%5d(%9f),%7d,hope=%7d\n",sum_k,(float)sum_k/sum_h,sum_b,sum_h);
+	}
+
 	if ( 0 && nGraph > 31 ) {
 		for (int j=0;j<9;j++) {
 			PRT("furi_resent_graph=%d,nGraph=%d\n",j,nGraph);
@@ -4160,7 +4223,7 @@ kld = 1.0;	// ignore kld
 		int *p = furi_win[y][x];
 		int s = *(p+0) + *(p+1) + *(p+2);
 		if ( s==0 ) s = 1;
-		PRT("%7.2f",(float)furi_moves_sum[y][x]/s);
+		PRT("%6.1f",(float)furi_moves_sum[y][x]/s);
 		if (x==8) PRT("\n");
 	}
 
@@ -5069,6 +5132,7 @@ void update_piece_w()
 static uint64_t rand_try = 0;
 static uint64_t rand_batch = 0;
 float furi_base_mix;
+float furi_base_array[9];
 int furi_ignore_moves;
 
 #ifdef FURIBISHA
@@ -5257,13 +5321,21 @@ void shogi::prepare_kif_db(int fPW, int mini_batch, float *data, float *label_po
 #endif
 		// 実際の勝敗と探索値の平均を学習。https://tadaoyamaoka.hatenablog.com/entry/2018/07/01/121411
 #ifdef FURIBISHA
+//		int furi_x = get_furi_bit_to_x(p->furi_bit[t&1]);
+//		if ( t&1 ) furi_x = 8 - furi_x;		// 先手は9間(x=0)が0, 向飛車が 1, 後手は9間(x=8)が 0
+//		if ( furi_x < 0 || furi_x >= 9 ) DEBUG_PRT("");
+//		float base_mix = furi_base_mix;
+//		float base_mix = furi_base_array[furi_x];
+		float base_mix = get_ave_furi_hope_bit(p->furi_hope_bit[t&1], furi_base_array, t);
+
 //		float ave_r = ((float)win_r + score + furi_r) / 3.0;
 		float a     = ((float)win_r + score) / 2.0;
 		// 80手目でfuri_rを無効に。30手目ぐらいだとPVが長いと突き抜けてしまう
-		float mix = furi_base_mix - furi_base_mix/(furi_ignore_moves - FURIBISHA_TO) * (t - FURIBISHA_TO);
-		if ( t <= FURIBISHA_TO      ) mix = furi_base_mix;
+		float mix = base_mix - base_mix/(furi_ignore_moves - FURIBISHA_TO) * (t - FURIBISHA_TO);
+		if ( t <= FURIBISHA_TO      ) mix = base_mix;
 		if ( t >  furi_ignore_moves ) mix = 0;
 		float ave_r = (1.0 - mix)*a + mix*furi_r;
+//		PRT("t=%3d,%d,p->furi_hope_bit[t&1]=%08x,base_mix=%6.2f,mix=%.3f\n",t,t&1,p->furi_hope_bit[t&1],base_mix,mix);
 #else
 		float ave_r = ((float)win_r + score) / 2.0;
 #endif
@@ -5660,13 +5732,16 @@ void start_zero_train(int *p_argc, char ***p_argv )
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1000000.caffemodel";	// w393
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1340000.caffemodel";	// w527
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/ext_r39/_iter_410000.caffemodel";	// 20b0001_iter_410000.txt
-	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1710000.caffemodel";	// w752
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1710000.caffemodel";	// w752
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_2790000.caffemodel";	// w1031
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1300000.caffemodel";	// w1161
+	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_510000.caffemodel";	// w1212
 #else
 //	const char sNet[] = "/home/yss/shogi/learn/snapshots/20210604/_iter_10000.caffemodel";	// w0001
 //	const char sNet[] = "/home/yss/shogi/learn/20231230_233235_256x20b_mb256_Swish_from_63080k_from_20231225_185612/_iter_800000.caffemodel";
 #endif
 
-	int next_weight_number = 753;	// 現在の最新の番号 +1
+	int next_weight_number = 1213;	// 現在の最新の番号 +1
 
 	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
 //	load_aoba_txt_weight( net, "/home/yss/w000000000689.txt" );	// 既存のw*.txtを読み込む。*.caffemodelを何か読み込んだ後に
@@ -5690,8 +5765,8 @@ goto wait_again;
 //		if ( iteration >= 100000*1 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration > 1000 ) solver_param.set_base_lr(0.01);
 	} else {
-		if ( 1 && iteration==0 && next_weight_number==753 ) {
-			add = 152;	// 初回のみダミーで10000棋譜追加したことにする
+		if ( 1 && iteration==0 && next_weight_number==1213 ) {
+			add = 83;	// 初回のみダミーで10000棋譜追加したことにする
 		} else {
 			add = PS->wait_and_get_new_kif(next_weight_number);
 		}
@@ -5732,6 +5807,7 @@ goto wait_again;
 		fclose(fp);
 	}
 
+#if 0
 	fp = fopen("furi_base_mix.txt","r");
 	if ( fp==NULL ) DEBUG_PRT("");
 	char str[TMP_BUF_LEN];
@@ -5739,6 +5815,22 @@ goto wait_again;
 	int ret = sscanf(str,"%d %f",&furi_ignore_moves,&furi_base_mix);
 	if ( ret !=2 || furi_ignore_moves <= 0 || furi_base_mix < 0 ) DEBUG_PRT("");
 	fclose(fp);
+#else
+	fp = fopen("furi_base_array.txt","r");
+	if ( fp==NULL ) DEBUG_PRT("");
+	char str[TMP_BUF_LEN];
+	if ( fgets( str, TMP_BUF_LEN, fp ) == NULL ) DEBUG_PRT("");
+	float *p = furi_base_array;
+	int ret = sscanf(str,"%d %f %f %f %f %f %f %f %f %f",&furi_ignore_moves,p+0,p+1,p+2,p+3,p+4,p+5,p+6,p+7,p+8);
+	if ( ret !=10 || furi_ignore_moves <= 0 ) DEBUG_PRT("");
+	PRT("furi_base_array[]= \n");
+	for (int i=0;i<9;i++) PRT("%.3f ",*(p+i));
+	PRT("\n");
+	fclose(fp);
+#endif
+
+
+
 	if ( 1200000 < zdb_count && zdb_count <= 1240000 ) { furi_ignore_moves = 80; furi_base_mix = 0.5; }
 	if ( 1240000 < zdb_count && zdb_count <= 1280000 ) { furi_ignore_moves = 80; furi_base_mix = 0.6; }
 	if ( 1280000 < zdb_count && zdb_count <= 1320000 ) { furi_ignore_moves = 80; furi_base_mix = 0.7; }
