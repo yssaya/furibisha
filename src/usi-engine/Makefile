@@ -56,7 +56,7 @@ ifeq ($(USE_POLICY2187), 1)
 endif
 
 # CPU_ONLY = 1 for cpu version.
-CPU_ONLY = 1
+CPU_ONLY = 0
 
 ifeq ($(CPU_ONLY), 1)
 CXXFLAGS += -DUSE_CPU_ONLY
