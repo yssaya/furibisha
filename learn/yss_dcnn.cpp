@@ -2830,10 +2830,10 @@ void free_zero_db_struct(ZERO_DB *p)
 
 }
 
-//const int ZERO_DB_SIZE = 10000;	// 100000,  500000
+const int ZERO_DB_SIZE = 10000;	// 100000,  500000
 //const int ZERO_DB_SIZE = 100000;	// 100000,  500000
-const int ZERO_DB_SIZE = 500000;
-//const int ZERO_DB_SIZE = 2000000;
+//const int ZERO_DB_SIZE = 500000;
+//const int ZERO_DB_SIZE = 1000000;
 //const int ZERO_DB_SIZE = 310000;
 const int MAX_ZERO_MOVES = 513;	// 512手目を後手が指して詰んでなければ。513手目を先手が指せば無条件で引き分け。
 ZERO_DB zdb_one;
@@ -2845,11 +2845,12 @@ unsigned char *pZDBmove;
 unsigned char *pZDBmaxmove;
 unsigned short *pZDBplayouts_sum;
 unsigned short *pZDBscore_x10k;
-const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-075
+//const int ZDB_POS_MAX = ZERO_DB_SIZE * 256;	// 128 = average moves. 64 = gct001-075
+const int ZDB_POS_MAX = ZERO_DB_SIZE * 180;	// 128 = average moves. 64 = gct001-075
 //const int ZDB_POS_MAX = ZERO_DB_SIZE * 1;	// AI book2
 
 int zdb_count = 0;
-int zdb_count_start = 11680000;//11160000;//9860000;//7070000;//5360000;//3400000;//4800000;//3480000;//2480000;//1770000;//1080000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
+int zdb_count_start = 19590000;//18930000;//17610000;//17030000;//14200000;//11680000;//11160000;//9860000;//7070000;//5360000;//3400000;//4800000;//3480000;//2480000;//1770000;//1080000;//120000;//140000;//30000;//130000;//20000;//120000;//40000;//110000;
 uint64_t zero_kif_pos_num = 0;
 int zero_kif_games = 0;
 int zero_pos_over250;
@@ -2860,7 +2861,7 @@ int nGCT_files;	// 1つの selfplay_gct-00*.csa に入ってる棋譜数
 int gct_csa = 1;	// ファイル番号
 int sum_gct_loads = 0; // 1ファイルの全棋譜を読み込んだ後に加算される
 
-const int fReplayLearning = 0;	// すでに作られた棋譜からWindowをずらせて学習させる
+const int fReplayLearning = 1;	// すでに作られた棋譜からWindowをずらせて学習させる
 const int fWwwSample = 0;		// fReplayLearning も同時に1
 
 
@@ -3035,8 +3036,9 @@ int find_kif_from_archive(int search_n)
 //	char dir_arch[] = "/home/yss/koma_syn/archive/";
 #if ( U8700==1 )
 //	char dir_arch[] = "/home/yss/tcp_backup/archive/";
-	char dir_arch[] = "/home/yss/prg/furibisha/archive/";
+//	char dir_arch[] = "/home/yss/prg/furibisha/archive/";
 //	char dir_arch[] = "/home/yss/shogi/furibisha/archive/";
+	char dir_arch[] = "/home/yss/archive_tmp/";
 #else
 //	char dir_arch[] = "/home/yss/tcp_backup/archive20201207/";
 	char dir_arch[] = "/home/yss/prg/furibisha/archive/";
@@ -3439,6 +3441,7 @@ int nRookHandicapLastID[ROOK_HANDICAP_NUM];
 
 void load_rook_handicap_id()
 {
+/*
 	static bool bDone = false;
 	if ( bDone ) return;
 	bDone = true;
@@ -3454,6 +3457,7 @@ void load_rook_handicap_id()
 	}
 	PRT("\n");
 	fclose(fp);
+*/
 }
 
 void save_rook_handicap()
@@ -3464,7 +3468,7 @@ void save_rook_handicap()
 		fprintf(fp,"%d %d\n",nRookHandicapRate[i],nRookHandicapLastID[i]);
 	}
 	fclose(fp);
-
+/*
 	fp = fopen(ROOK_HANDICAP_SYN,"w");
 	if ( fp==NULL ) {
 		PRT("fail open %s\n",ROOK_HANDICAP_SYN);
@@ -3474,7 +3478,7 @@ void save_rook_handicap()
 		}
 		fclose(fp);
 	}
-
+*/
 	fp = fopen("rook_handicap_history.txt","a");
 	if ( fp==NULL ) DEBUG_PRT("fail open.\n");
 
@@ -4238,6 +4242,8 @@ kld = 1.0;	// ignore kld
 
 int shogi::is_koshikake_gin(ZERO_DB *p)
 {
+	const int USI_POS_MAX_SIZE = 8192;
+	char str[USI_POS_MAX_SIZE];
 	int w = p->weight_n;
 	int i;
 	int furi[2][9] = {0};
@@ -4383,6 +4389,16 @@ int shogi::is_koshikake_gin(ZERO_DB *p)
 			PRT("kakugawari 30moves basis. i=%d,%d,%d,result=%d,moves=%d\n",i,zdb_count,w,p->result,p->moves);
 			hyouji();
 		}
+		if ( i==29 && b[0x11]==0x88 && b[0x21]==0x82 ) {
+			PS->make_usi_position(str, i+1);
+			PRT("furiana gote? i=%d,%d,%d,%s\n",i,zdb_count,w,str);
+			hyouji();
+		}
+		if ( i==29 && b[0x99]==0x08 && b[0x89]==0x02 ) {
+			PS->make_usi_position(str, i+1);
+			PRT("furiana sente? i=%d,%d,%d,%s\n",i,zdb_count,w,str);
+			hyouji();
+		}
 
 	}
 
@@ -4470,7 +4486,7 @@ void shogi::same_pos_check()	// from aoba_calc_stat()
 	if ( zdb_count <= 0 ) DEBUG_PRT("");
 	ZERO_DB *p = &zdb[(zdb_count-1) % ZERO_DB_SIZE];
 //  if ( p->weight_n == 0 ) continue;
-//	is_koshikake_gin(p);
+	is_koshikake_gin(p);
 
 	if ( p->moves == 0 ) { DEBUG_PRT("Err. p->moves=0\n"); }
 	if ( p->result < 0 || p->result >=4 ) DEBUG_PRT("p->result=%d\n",p->result);
@@ -4809,6 +4825,7 @@ if ( fSumTree ) return 0;
         add_one_kif_to_db();
         add_kif_sum++;
         new_kif_n++;
+		if ( 1 ) same_pos_check();
     }
     update_pZDBsum();
     PRT("add_kif_sum=%d,",add_kif_sum);
@@ -5735,15 +5752,20 @@ void start_zero_train(int *p_argc, char ***p_argv )
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1710000.caffemodel";	// w752
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_2790000.caffemodel";	// w1031
 //	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_1300000.caffemodel";	// w1161
-	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_510000.caffemodel";	// w1212
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_510000.caffemodel";	// w1212
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_2530000.caffemodel";	// w1465
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_2820000.caffemodel";	// w1747
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/_iter_590000.caffemodel";	// w1806
+//	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/20250118/_iter_1310000.caffemodel";// w1937
+	const char sNet[] = "/home/yss/prg/furibisha/learn/snapshots/20250121/_iter_50000.caffemodel";// w1942
 #else
 //	const char sNet[] = "/home/yss/shogi/learn/snapshots/20210604/_iter_10000.caffemodel";	// w0001
 //	const char sNet[] = "/home/yss/shogi/learn/20231230_233235_256x20b_mb256_Swish_from_63080k_from_20231225_185612/_iter_800000.caffemodel";
 #endif
 
-	int next_weight_number = 1213;	// 現在の最新の番号 +1
+	int next_weight_number = 1943;	// 現在の最新の番号 +1
 
-	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
+//	net->CopyTrainedLayersFrom(sNet);	// caffemodelを読み込んで学習を再開する場合
 //	load_aoba_txt_weight( net, "/home/yss/w000000000689.txt" );	// 既存のw*.txtを読み込む。*.caffemodelを何か読み込んだ後に
 	LOG(INFO) << "Solving ";
 	PRT("fReplayLearning=%d,stree_total()=%lld,zero_kif_pos_num=%lu\n",fReplayLearning,stree_total(),zero_kif_pos_num);
@@ -5765,8 +5787,8 @@ goto wait_again;
 //		if ( iteration >= 100000*1 ) { PRT("done...\n"); solver->Snapshot(); return; }
 //		if ( iteration > 1000 ) solver_param.set_base_lr(0.01);
 	} else {
-		if ( 1 && iteration==0 && next_weight_number==1213 ) {
-			add = 83;	// 初回のみダミーで10000棋譜追加したことにする
+		if ( 1 && iteration==0 && next_weight_number==1943 ) {
+			add = 7465;	// 初回のみダミーで10000棋譜追加したことにする
 		} else {
 			add = PS->wait_and_get_new_kif(next_weight_number);
 		}

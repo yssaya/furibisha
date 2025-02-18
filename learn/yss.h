@@ -352,6 +352,8 @@ public:
 	void SaveKaki(char *sTagInfo, char *sKifDate);
 	void SetSennititeKif(void);	// 千日手も棋譜情報に登録する
 
+	void make_usi_position(char *str, int moves);	// 6*1024手=6000byte以上は必要
+
 	// yss_base.cpp
 	inline int nifu_c(register int z);
 	inline int nifu_m(register int z);

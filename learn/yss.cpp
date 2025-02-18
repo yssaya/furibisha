@@ -2224,6 +2224,52 @@ void shogi::copy_org_ban(void)
 }
 
 
+//                        012345678
+static char usi_koma[] = " PLNSGBRK";
+
+// str[6]
+void te_to_usi_str(int bz,int az,int tk,int nf, char *str)
+{
+	int bx = 10 - (bz & 0x0f);
+	int by = (bz & 0xf0) >> 4;
+	int ax = 10 - (az & 0x0f);
+	int ay = (az & 0xf0) >> 4;
+
+	str[0] = bx + '0';
+	str[1] = by + 'a' - 1;
+	str[2] = ax + '0';
+	str[3] = ay + 'a' - 1;
+	str[4] = 0;
+	str[5] = 0;
+	if ( nf ) str[4] = '+';
+	if ( bz==0xff ) {
+		str[0] = usi_koma[tk&0x07];
+		str[1] = '*';
+	}
+}
+
+void shogi::make_usi_position(char *str, int moves)	// 6*1024手=6000byte以上は必要
+{
+//	if ( nHandicap ) {
+//		sprintf(str,"position sfen %s w - 1",init_pos[nHandicap]);
+//	} else {
+		sprintf(str,"position startpos");
+//	}
+	if ( moves > tesuu ) moves = tesuu;
+	if ( moves > 0 ) {
+		strcat(str," moves");
+		int i;
+		for (i=1;i<=moves;i++) {
+			strcat(str," ");
+			char s[6];
+			te_to_usi_str( kifu[i][0],kifu[i][1],kifu[i][2],kifu[i][3], s);
+			strcat(str,s);
+		}
+	}
+	strcat(str,"\n");
+}
+
+
 
 /************************** ban init ********************************/
 int org_ban[BAN_SIZE]= {
